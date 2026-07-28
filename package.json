@@ -49,6 +49,7 @@
     "smoke": "node scripts/smoke.mjs",
     "check:structure": "node scripts/check-repo-structure.mjs",
     "check:generator-version": "node scripts/check-generator-version.mjs",
+    "check:clone-parity": "node scripts/migration/verify-clone-parity.mjs",
     "pack:check": "npm pack --dry-run && npx publint",
     "check": "npm run check:structure && npm run check:generator-version && npm run typecheck && npm run lint && npm run build && npm run test && npm run smoke",
     "verify": "npm run check",
