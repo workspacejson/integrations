@@ -89,7 +89,8 @@ jobs:
       - name: Reproduce parity receipt
         if: steps.check-receipt.outputs.has_receipt == 'true'
         run: |
-          node scripts/migration/verify-clone-parity.mjs --out .parity-ci
+          TARGET_SHA=$(node -p "require('./docs/migration/parity-receipt.json').refs.targetSha")
+          node scripts/migration/verify-clone-parity.mjs --target-ref "$TARGET_SHA" --out .parity-ci
 
       - name: Compare CI receipt against committed reference
         if: steps.check-receipt.outputs.has_receipt == 'true'

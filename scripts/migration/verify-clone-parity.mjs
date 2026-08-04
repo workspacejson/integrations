@@ -347,8 +347,19 @@ async function main() {
     let targetDir = opt.targetDir;
     if (!sourceDir) {
       sourceDir = join(work, "source");
-      run("git", ["worktree", "add", "--detach", sourceDir, sourceSha], { cwd: repoRoot });
+      const srcAdd = run("git", ["worktree", "add", "--detach", sourceDir, sourceSha], { cwd: repoRoot });
       worktrees.push(sourceDir);
+      if (srcAdd.exitCode !== 0) {
+        ledger.record(
+          "prepare.checkout",
+          `git worktree add for source sha ${sourceSha}`,
+          "fail",
+          {},
+          [`worktree add failed: ${srcAdd.stderr.trim()}`],
+          [srcAdd.command],
+        );
+        return finish(ledger, manifest, toolchain, startedAt, sourceSha, null, opt.outDir, 1);
+      }
     }
     if (!targetDir) {
       targetDir = join(work, "target");
