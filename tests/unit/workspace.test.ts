@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
+import { WORKSPACE_JSON_CANDIDATES } from "../../src/constants.js";
 import {
   findCoChangePartners,
   findFragile,
@@ -19,8 +20,14 @@ const sourcePath = resolve(here, "../../fixture/.agents/workspace.json");
 const created: string[] = [];
 
 afterEach(() => {
-  process.env.WORKSPACE_JSON_ROOT = undefined;
-  process.env.WORKSPACE_JSON_PATH = undefined;
+  // `process.env.X = undefined` assigns the STRING "undefined", which is truthy and
+  // non-empty — resolveWorkspacePath would then take the explicit-path branch and
+  // throw for the wrong reason, making every discovery test below vacuously green.
+  // Removing the key is the only way to actually unset an environment variable in
+  // Node. Reflect.deleteProperty rather than `delete` because the lint rule that
+  // bans `delete` suggests exactly the `= undefined` form that causes the bug.
+  Reflect.deleteProperty(process.env, "WORKSPACE_JSON_ROOT");
+  Reflect.deleteProperty(process.env, "WORKSPACE_JSON_PATH");
   for (const path of created.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
@@ -35,6 +42,56 @@ describe("resolveWorkspacePath", () => {
     mkdirSync(resolve(nestedRepo, "packages/deep"), { recursive: true });
     process.env.WORKSPACE_JSON_ROOT = resolve(nestedRepo, "packages/deep");
     expect(() => resolveWorkspacePath()).toThrow("No workspace.json found");
+  });
+
+  // META-291: a product-private sidecar must not be reachable by default discovery.
+  // Tolerating a vendor shape that is handed to us is compatibility behavior;
+  // *searching* for one makes it an implied path of the neutral standard.
+  it("does not discover a product-private vendor sidecar by default", () => {
+    const repo = mkdtempSync(resolve(tmpdir(), "wjson-sidecar-"));
+    created.push(repo);
+    mkdirSync(resolve(repo, ".git"), { recursive: true });
+    mkdirSync(resolve(repo, ".vreko"), { recursive: true });
+    writeFileSync(resolve(repo, ".vreko/workspace.json"), "{}\n");
+    process.env.WORKSPACE_JSON_ROOT = repo;
+    expect(() => resolveWorkspacePath()).toThrow("No workspace.json found");
+  });
+
+  it("still resolves a vendor sidecar when named explicitly via WORKSPACE_JSON_PATH", () => {
+    const repo = mkdtempSync(resolve(tmpdir(), "wjson-sidecar-explicit-"));
+    created.push(repo);
+    mkdirSync(resolve(repo, ".vreko"), { recursive: true });
+    const sidecar = resolve(repo, ".vreko/workspace.json");
+    writeFileSync(sidecar, "{}\n");
+    process.env.WORKSPACE_JSON_PATH = sidecar;
+    // Removing the default candidate must not remove the ability to point at such a
+    // file deliberately — the boundary is discovery, not readability.
+    expect(resolveWorkspacePath()).toBe(sidecar);
+  });
+
+  it("prefers the canonical path over a ratified legacy path in the same directory", () => {
+    const repo = mkdtempSync(resolve(tmpdir(), "wjson-priority-"));
+    created.push(repo);
+    mkdirSync(resolve(repo, ".agents"), { recursive: true });
+    writeFileSync(resolve(repo, ".agents/workspace.json"), "{}\n");
+    writeFileSync(resolve(repo, "workspace.json"), "{}\n");
+    process.env.WORKSPACE_JSON_ROOT = repo;
+    expect(resolveWorkspacePath()).toBe(resolve(repo, ".agents/workspace.json"));
+  });
+});
+
+describe("WORKSPACE_JSON_CANDIDATES", () => {
+  // Reintroduction guard. This fails if any vendor- or product-specific path is added
+  // back to default discovery — the defect META-291 recorded, not a style preference.
+  it("contains only ADR-001 canonical and ratified legacy paths", () => {
+    expect([...WORKSPACE_JSON_CANDIDATES]).toEqual([".agents/workspace.json", ".workspace.json", "workspace.json"]);
+  });
+
+  it("names no vendor or product-private directory", () => {
+    const vendorish = /(^|\/)\.(vreko|marcelle|codex|cursor)(\/|$)/i;
+    for (const candidate of WORKSPACE_JSON_CANDIDATES) {
+      expect(candidate, `${candidate} leaks a product-specific path into neutral discovery`).not.toMatch(vendorish);
+    }
   });
 });
 

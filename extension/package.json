@@ -25,17 +25,17 @@
   "badges": [
     {
       "url": "https://img.shields.io/badge/license-Apache--2.0-blue",
-      "href": "https://github.com/workspace-json/codex-mcp/blob/main/LICENSE",
+      "href": "https://github.com/workspacejson/integrations/blob/main/LICENSE",
       "description": "License"
     },
     {
-      "url": "https://github.com/workspace-json/codex-mcp/actions/workflows/ci.yml/badge.svg",
-      "href": "https://github.com/workspace-json/codex-mcp/actions/workflows/ci.yml",
+      "url": "https://github.com/workspacejson/integrations/actions/workflows/ci.yml/badge.svg",
+      "href": "https://github.com/workspacejson/integrations/actions/workflows/ci.yml",
       "description": "CI Status"
     }
   ],
   "bugs": {
-    "url": "https://github.com/workspace-json/codex-mcp/issues"
+    "url": "https://github.com/workspacejson/integrations/issues"
   },
   "homepage": "https://workspacejson.dev/implementations/codex",
   "pricing": "Free",
@@ -142,7 +142,7 @@
       {
         "view": "workspacejsonCodexChangeset",
         "when": "workspacejsonCodex.viewState == noFile",
-        "contents": "No `.agents/workspace.json` was found.\n\nGenerate one with `npx agents-audit@0.4.3 generate .` — it writes repository topology and hygiene. Today, `fileIndex` is empty and `manual` fragility/co-change evidence is human-authored (ASSERTED tier, not auto-generated).\n\n[Generate Intelligence](command:workspacejson.generateIntelligence)\n\n[Getting Started](command:workspacejson.openWalkthrough)"
+        "contents": "No `.agents/workspace.json` was found.\n\nGenerate one with `npx @workspacejson/cli generate .` — it writes a repository file index and framework manifest. `manual` fragility/co-change evidence stays human-authored (ASSERTED tier, not auto-generated).\n\n[Generate Intelligence](command:workspacejson.generateIntelligence)\n\n[Getting Started](command:workspacejson.openWalkthrough)"
       },
       {
         "view": "workspacejsonCodexChangeset",
@@ -169,7 +169,7 @@
           {
             "id": "generate",
             "title": "Generate workspace.json",
-            "description": "The MCP server and hook consume `.agents/workspace.json`. Generate one with `npx agents-audit@0.4.3 generate .` — it writes repository topology and hygiene. Today, `fileIndex` is empty and `manual` fragility/co-change evidence is human-authored (ASSERTED tier, not auto-generated).\n[Generate Intelligence](command:workspacejson.generateIntelligence)",
+            "description": "The MCP server and hook consume `.agents/workspace.json`. Generate one with `npx @workspacejson/cli generate .` — it writes a repository file index and framework manifest. `manual` fragility/co-change evidence stays human-authored (ASSERTED tier, not auto-generated).\n[Generate Intelligence](command:workspacejson.generateIntelligence)",
             "media": {
               "markdown": "assets/walkthrough/generate.md"
             },
@@ -245,6 +245,6 @@
   "icon": "assets/icon.png",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/workspace-json/codex-mcp.git"
+    "url": "git+https://github.com/workspacejson/integrations.git"
   }
 }

@@ -123,12 +123,12 @@ export function registerCommands(model: WorkspaceIntelligenceModel, context: vsc
     const term = terminal(GENERATE_TERMINAL);
     // Pre-fill only — the developer runs it. Not auto-executed.
     // The extension is a pure consumer: it types a command, the user presses
-    // enter, and the canonical agents-audit generator runs. The extension
-    // writes nothing to the working tree.
-    term.sendText("npx agents-audit@0.4.3 generate .", false);
+    // enter, and the neutral producer runs. The extension writes nothing to
+    // the working tree.
+    term.sendText("npx @workspacejson/cli generate .", false);
     term.show();
     void vscode.window.showInformationMessage(
-      "workspace.json: generate command staged in the terminal. Review it, then press Enter to run. Today, generate writes repository topology and hygiene with an empty fileIndex; manual evidence is human-authored.",
+      "workspace.json: generate command staged in the terminal. Review it, then press Enter to run. generate writes a repository file index and framework manifest; manual fragility and co-change evidence stay human-authored.",
     );
   });
 
