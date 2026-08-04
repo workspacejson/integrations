@@ -588,6 +588,10 @@ async function main() {
   // scanning argv, which would let a flag VALUE (e.g. `--vsix server`)
   // hijack dispatch into a different program than the one requested.
   const [command, ...rest] = argv;
+  if (command === "--help" || command === "-h") {
+    console.log(USAGE);
+    return;
+  }
   if (command === "server") {
     await runServer();
     return;
