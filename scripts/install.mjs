@@ -491,9 +491,9 @@ async function runInstall(opts = {}) {
   if (!artifactExists) {
     console.log("");
     console.log("  .agents/workspace.json does not exist yet. Generate it:");
-    console.log("    npx agents-audit@0.4.3 generate .");
-    console.log("  Today, generate writes repository topology and hygiene with an empty");
-    console.log("  fileIndex; manual fragility and co-change evidence is human-authored.");
+    console.log("    npx @workspacejson/cli generate .");
+    console.log("  generate writes a repository file index and framework manifest; manual");
+    console.log("  fragility and co-change evidence is human-authored.");
   }
   if (withExtension) console.log(`  ${pad("VS Code extension")}${extension.status}`);
   if (withExtension && extension.status === "PASS") {

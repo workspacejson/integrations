@@ -6,11 +6,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/workspace-json/codex-mcp.git"
+    "url": "git+https://github.com/workspacejson/integrations.git"
   },
   "homepage": "https://workspacejson.dev/implementations/codex",
   "bugs": {
-    "url": "https://github.com/workspace-json/codex-mcp/issues"
+    "url": "https://github.com/workspacejson/integrations/issues"
   },
   "keywords": [
     "codex",

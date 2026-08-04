@@ -15,38 +15,10 @@
 <p align="center"><code>@workspacejson/codex-mcp</code></p>
 
 <p align="center">
-  <a href="https://github.com/workspace-json/codex-mcp/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/workspace-json/codex-mcp/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/workspacejson/integrations/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/workspacejson/integrations/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Node 20+" src="https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white">
   <img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue">
 </p>
-
----
-
-## Hackathon submission snapshot
-
-The OpenAI Build Week submission was finalized on **July 21, 2026** (5:00 PM Pacific deadline).
-
-For judging, the submitted project state is preserved at:
-
-- **Git tag:** `codex-mcp-v0.1.9` (also available as `build-week-2026-submission`)
-- **Commit:** `7d42a61af78a383219c536cc49220f154a93a2bf`
-
-Commits made after the submission deadline are limited to **repository maintenance, audit documentation, and branch/worktree reconciliation**. They are not part of the work submitted for judging.
-
-| Commit | Date | Description |
-| --- | --- | --- |
-| `6eeb49f` | Jul 22 | `docs(audit): record worktree reconciliation (#14)` |
-| `7ca4c19` | Jul 22 | `docs(audit): record HAC-170 cleanup (#15)` |
-| `7882883` | Jul 23 | `docs(audit): record duplicate branch cleanup (#16)` |
-| `e188225` | Jul 23 | `docs(audit): record cleanup wave three (#17)` |
-
-Each of these commits touches only files under `docs/audits/` — no source code, tests, dependencies, or packaging were modified after the deadline.
-
-Installation and testing instructions for the submitted version remain available below. To check out the exact submitted state:
-
-```bash
-git checkout codex-mcp-v0.1.9
-```
 
 ---
 
@@ -136,17 +108,19 @@ Demo and fixture repos may recommend the exact extension ID through `.vscode/ext
 
 ### Generate workspace.json
 
-The MCP server and hook consume `.agents/workspace.json`. The reference generator is [`agents-audit`](https://github.com/workspace-json/agents-audit) — a separate package in the same org:
+The MCP server and hook consume `.agents/workspace.json`. The producer is [`@workspacejson/cli`](https://github.com/workspacejson/cli), the neutral generator owned by the standard's CLI repository:
 
 ```bash
-npx agents-audit@0.4.3 generate .
+npx @workspacejson/cli generate .
 ```
 
-This writes `.agents/workspace.json` with repository topology and hygiene. Today, `generated.fileIndex` is empty and `manual` fragility/co-change evidence is not auto-generated — those remain human-authored (ASSERTED tier at minimum, OBSERVED when backed by evidence records). The generator does not guess risk signals; guessed churn has no evidence records, remains ASSERTED, and cannot block. See [`fixture/`](fixture/) for a worked example with manual evidence.
+This writes `.agents/workspace.json` with a repository file index and detected framework manifest. `manual` fragility/co-change evidence is not auto-generated — it remains human-authored (ASSERTED tier at minimum, OBSERVED when backed by evidence records). The generator does not guess risk signals; guessed churn has no evidence records, remains ASSERTED, and cannot block. See [`fixture/`](fixture/) for a worked example with manual evidence.
+
+> **`agents-audit` is the historical command.** It is a frozen compatibility bridge that delegates generation to `@workspacejson/cli`, retained so existing setups keep working. Use it only if you are pinned to it; new installs should use the neutral producer above.
 
 ### Local proof path — two recorded partners
 
-`generate` (above) writes repository topology only — no fragility or co-change evidence, so a freshly generated `workspace.json` has nothing to deny yet. To see the deny path itself, use this repo's `fixture/`, whose `manual` evidence is hand-authored for exactly this demo:
+`generate` (above) writes machine-derived repository inventory only — no fragility or co-change evidence, so a freshly generated `workspace.json` has nothing to deny yet. To see the deny path itself, use this repo's `fixture/`, whose `manual` evidence is hand-authored for exactly this demo:
 
 1. Open `fixture/` in Codex. In Codex, ask it to edit `src/routes/checkout.ts`.
 2. Watch the hook refuse the patch, citing the recorded evidence and the co-change partners the change left out.
@@ -225,6 +199,24 @@ Each is checkable, not asserted: run `npm run verify` from a clean clone to repr
 - [Build Week disclosure](docs/submission/build-week.md) — what was authored in-window
 - [Development](docs/development.md) — build, test, and smoke-suite commands
 - [Clean-install audit](docs/clean-install-audit.md) · [Fixture verification](docs/fixture-verification.md) · [`billfold`](https://github.com/workspace-json/billfold) — the public repo behind the demo video
+
+## Repository and authority
+
+Development, issues, and CI for this package live in [`workspacejson/integrations`](https://github.com/workspacejson/integrations). The package was originally published from `workspace-json/codex-mcp`, which is retained as a historical publication source only.
+
+This repository is a **consumer** of the standard, not an author of it. The normative schema, types, and validation semantics are owned by [`workspacejson/standard`](https://github.com/workspacejson/standard); artifact generation is owned by [`workspacejson/cli`](https://github.com/workspacejson/cli). Behavior here is driven by exactly four demonstrated stable read paths — `manual.fragileFiles`, `manual.coChangePatterns`, `generated.fileIndex`, `generated.frameworkManifest`. Other fields present in an artifact are tolerated for compatibility and deliberately do not affect results; tolerance is not an extension of the normative schema. See [`docs/workspace-contract.md`](docs/workspace-contract.md).
+
+## Project history
+
+This package began as an OpenAI Build Week submission, finalized **July 21, 2026**. The submitted state is preserved at tag `codex-mcp-v0.1.9` (also `build-week-2026-submission`), commit `7d42a61af78a383219c536cc49220f154a93a2bf`:
+
+```bash
+git checkout codex-mcp-v0.1.9
+```
+
+Commits after the deadline and before the migration were limited to repository maintenance and audit documentation under `docs/audits/` — `6eeb49f`, `7ca4c19`, `7882883`, `e188225` — touching no source, tests, dependencies, or packaging. Full in-window disclosure: [`docs/submission/build-week.md`](docs/submission/build-week.md).
+
+That snapshot is history, not the current shape of the project. Everything above this section describes the durable integration.
 
 ## License
 
