@@ -1,0 +1,67 @@
+{
+  "$comment": "Source manifest for the workspace-json/codex-mcp -> workspacejson/integrations clone (META-241 Phase 1). Every fact below was measured from the live remotes and npm registry at measuredAt; scripts/migration/verify-clone-parity.mjs re-derives what it can and fails on drift. This file records migration provenance only — it defines no schema, producer behavior, or conformance semantics.",
+  "measuredAt": "2026-07-28T10:10:00-04:00",
+  "source": {
+    "repository": "https://github.com/workspace-json/codex-mcp",
+    "verifiedSourceSha": "7e3f0fead990a470abc3f2647e0aeec59aafdcfc",
+    "verification": "git ls-remote of the source remote shows refs/heads/main at exactly this SHA at measuredAt; the same SHA is an ancestor of target main (git merge-base --is-ancestor).",
+    "mainBranch": "main"
+  },
+  "target": {
+    "repository": "https://github.com/workspacejson/integrations",
+    "initialTargetSha": "687089e9648fe49853a6754f5c19bf8030371b98",
+    "currentTargetSha": "4ea6711684bc6157468d24c7ce8a7b3227014bd6",
+    "treeStateAtMeasurement": "git diff <verifiedSourceSha>..main is empty: the target main tree is byte-identical to the frozen source tree. The only delta is commit topology (target PR #1 merge 4ea6711 re-applied the already-merged submission snapshot).",
+    "mainBranch": "main"
+  },
+  "paths": {
+    "included": ["<entire source tree, cloned with full history>"],
+    "excluded": [],
+    "intentionalDifferences": []
+  },
+  "refs": {
+    "branchesDisposition": "Source main became target main. Source-only review branches (refs/pull/*, docs/readme-submission-snapshot, fix/adversarial-review-hac99-hac101) were not migrated and remain in the source repository.",
+    "tagsDisposition": "All 8 source tags migrated with identical SHAs, verified by diffing sorted git ls-remote --tags output of both remotes at measuredAt: build-week-2026-submission, codex-mcp-v0.1.5, codex-mcp-v0.1.6, codex-mcp-v0.1.7, codex-mcp-v0.1.8, codex-mcp-v0.1.9, extension-v0.1.3, extension-v0.1.4."
+  },
+  "package": {
+    "name": "@workspacejson/codex-mcp",
+    "version": "0.1.9",
+    "bins": {
+      "codex-mcp": "scripts/install.mjs",
+      "workspacejson-codex-mcp": "scripts/install.mjs"
+    },
+    "npm": {
+      "distTags": { "latest": "0.1.9" },
+      "integrity": "sha512-YINreDlkMQP9p4gHv1kHQsslxavGsB7+6LaBEM7+Q8RT889xbBBLo53UFxt1qEJeCuMi+joIsP2qkBLh7oZ5gg==",
+      "tarball": "https://registry.npmjs.org/@workspacejson/codex-mcp/-/codex-mcp-0.1.9.tgz",
+      "fileCount": 28,
+      "unpackedSize": 176466,
+      "maintainers": ["vybezcodetel"]
+    }
+  },
+  "extension": {
+    "publisher": "workspace-json",
+    "extensionId": "workspacejson-codex-decorations",
+    "version": "0.1.5"
+  },
+  "publishAuthority": {
+    "npm": "Manual tag-triggered workflow .github/workflows/publish-npm.yml; registry maintainer vybezcodetel. No publish from this phase; identities preserved.",
+    "vscodeMarketplace": "Workflow .github/workflows/publish-extension.yml; publisher workspace-json. Marketplace credentials are NOT required to build and compare local VSIX artifacts, and none were used.",
+    "note": "Publish authority, package name, version line, bins, Codex plugin slug, extension publisher/ID, and installer/hook behavior are frozen by mission directive and unchanged by this phase."
+  },
+  "rollbackRef": {
+    "sha": "7e3f0fead990a470abc3f2647e0aeec59aafdcfc",
+    "refs": [
+      "source refs/heads/main",
+      "tag codex-mcp-v0.1.9 (peeled 7d42a61af78a383219c536cc49220f154a93a2bf)",
+      "tag build-week-2026-submission (peeled 7d42a61af78a383219c536cc49220f154a93a2bf)"
+    ]
+  },
+  "toolchain": {
+    "node": "v22.19.0",
+    "npm": "10.9.8",
+    "vsce": "2.15.0",
+    "os": "macOS (darwin, arm64)",
+    "engines": "node >=20 (package.json)"
+  }
+}
