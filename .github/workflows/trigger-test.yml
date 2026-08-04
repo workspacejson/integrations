@@ -1,0 +1,9 @@
+name: trigger-test
+on:
+  push:
+    branches: [ci-trigger-test]
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
