@@ -34,3 +34,6 @@ hac120-desktop.png
 # Private Codex workflow guidance stays available in this checkout, not the OSS repo.
 /AGENTS.local.md
 /.agents/skills/
+
+# CI-generated parity receipt output; compared against committed reference, never committed.
+.parity-ci/
