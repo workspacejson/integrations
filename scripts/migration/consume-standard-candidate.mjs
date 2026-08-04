@@ -94,7 +94,7 @@ async function main() {
     );
     record(
       "tarball contains hooks/",
-      packMeta.files?.some((f) => f.path === "hooks/"),
+      packMeta.files?.some((f) => f.path.startsWith("hooks/")),
     );
 
     // --- Step 2: Install in disposable dir --------------------------------
@@ -137,9 +137,8 @@ async function main() {
     const instr = client.getInstructions();
     record("server instructions contain FRAGILE", instr?.includes("FRAGILE"), "missing instructions");
 
-    const { tools } = await client.callTool({ name: "workspace_list_fragile_files", arguments: {} });
-    const toolListResult = tools;
-    record("server responds to tool calls", toolListResult !== undefined);
+    const toolResult = await client.callTool({ name: "workspace_list_fragile_files", arguments: {} });
+    record("server responds to tool calls", !toolResult.isError);
 
     const { tools: availableTools } = await client.listTools();
     const toolNames = availableTools.map((t) => t.name).sort();
@@ -188,7 +187,7 @@ async function main() {
     const s3 = r3.structuredContent;
     record(
       "assess change returns decision",
-      s3?.decision !== undefined || s3?.results !== undefined,
+      s3?.action !== undefined || s3?.assessments !== undefined,
       JSON.stringify(s3),
     );
 
@@ -219,10 +218,11 @@ async function main() {
     record("installer script exists in packed artifact", existsSync(installScript));
 
     const installHelp = run("node", [installScript, "--help"]);
+    const installHelpOutput = (installHelp.stdout ?? "") + (installHelp.stderr ?? "");
     record(
       "installer --help works from packed artifact",
-      installHelp.status === 0 && /Usage:/i.test(installHelp.stdout),
-      installHelp.stdout.slice(-500),
+      installHelp.status === 0 && /Usage:/i.test(installHelpOutput),
+      installHelpOutput.slice(-500),
     );
   } finally {
     // --- Write receipt -----------------------------------------------------
