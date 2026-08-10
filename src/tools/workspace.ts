@@ -195,7 +195,7 @@ const PathInput = z
       .string()
       .min(1, "path must be a non-empty repo-relative or absolute file path")
       .describe(
-        "The file path to look up. Absolute or repo-relative both work (matched on suffix). Example: 'src/db/client.ts'.",
+        "The file path to look up. Repo-relative, or absolute inside this repository — an absolute path is resolved against the repository root and must fall inside it. A path outside the repository does not match. Example: 'src/db/client.ts'.",
       ),
   })
   .strict();
@@ -250,6 +250,7 @@ Returns fragile:false with empty partners when the file has no recorded history 
           evidence: fragile?.evidence ?? [],
           coChangePartners: partners,
           changesetPaths: [path], // single-file view: partners are "missing" advisories
+          repositoryRoot: ws.repositoryRoot,
         });
 
         const output = {
@@ -449,6 +450,7 @@ Returns JSON:
             evidence: fragile?.evidence ?? [],
             coChangePartners: findCoChangePartners(ws, p),
             changesetPaths: paths,
+            repositoryRoot: ws.repositoryRoot,
           });
         });
         const action = aggregateAction(assessments);

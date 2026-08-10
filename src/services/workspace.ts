@@ -49,6 +49,34 @@ export function resolveWorkspacePath(): string {
   throw new WorkspaceNotFoundError(searched.slice(0, 8));
 }
 
+/**
+ * The repository root a stored key is relative to, derived CENTRALLY from the
+ * matched WORKSPACE_JSON_CANDIDATES entry — never from a generic dirname().
+ *
+ * This distinction is the whole point: the canonical artifact location is
+ * `.agents/workspace.json` (ADR-001), so `dirname(sourcePath)` yields
+ * `<root>/.agents` and is one level short. Stored keys are repo-root-relative
+ * (META-102), so a root that is one level short makes every legitimate absolute
+ * host query fail containment.
+ *
+ * Walks up exactly as many levels as the candidate has segments and confirms the
+ * round trip, so a directory that merely happens to be named `.agents` cannot be
+ * mistaken for the artifact layout. Candidate order matters and is already
+ * correct: `.agents/workspace.json` is tried before the bare `workspace.json`
+ * that it also ends with. Falls back to the containing directory for a path that
+ * matches no known candidate layout (an explicit WORKSPACE_JSON_PATH may point
+ * anywhere).
+ */
+export function repositoryRootFor(workspacePath: string): string {
+  const resolved = resolve(workspacePath);
+  for (const candidate of WORKSPACE_JSON_CANDIDATES) {
+    let dir = resolved;
+    for (let i = 0; i < candidate.split("/").length; i++) dir = dirname(dir);
+    if (resolve(dir, candidate) === resolved) return dir;
+  }
+  return dirname(resolved);
+}
+
 function optionalRecord(value: unknown, field: string): Record<string, unknown> {
   if (value === undefined) return {};
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -183,6 +211,7 @@ export function normalizeWorkspace(sourcePath: string, parsed: unknown): Normali
   // known-divergent (VR-526, VR-553, VR-432, VR-542, VR-540/541, META-103).
   return {
     sourcePath,
+    repositoryRoot: repositoryRootFor(sourcePath),
     version,
     fragileFiles: normalizeFragileFiles(manual.fragileFiles),
     coChangeGroups: normalizeCoChange(manual.coChangePatterns),
@@ -216,15 +245,15 @@ export async function loadWorkspace(): Promise<NormalizedWorkspace> {
 }
 
 export function findFragile(ws: NormalizedWorkspace, path: string): FragileFile | undefined {
-  return ws.fragileFiles.find((f) => pathsMatch(path, f.path));
+  return ws.fragileFiles.find((f) => pathsMatch(path, f.path, ws.repositoryRoot));
 }
 
 export function findCoChangePartners(ws: NormalizedWorkspace, path: string): string[] {
   const partners = new Set<string>();
   for (const group of ws.coChangeGroups) {
-    if (group.files.some((f) => pathsMatch(path, f))) {
+    if (group.files.some((f) => pathsMatch(path, f, ws.repositoryRoot))) {
       for (const f of group.files) {
-        if (!pathsMatch(path, f)) partners.add(f);
+        if (!pathsMatch(path, f, ws.repositoryRoot)) partners.add(f);
       }
     }
   }
@@ -232,7 +261,7 @@ export function findCoChangePartners(ws: NormalizedWorkspace, path: string): str
 }
 
 export function isIndexed(ws: NormalizedWorkspace, path: string): boolean {
-  return ws.fileIndex.some((k) => pathsMatch(path, k));
+  return ws.fileIndex.some((k) => pathsMatch(path, k, ws.repositoryRoot));
 }
 
 export function __resetCache(): void {

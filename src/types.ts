@@ -36,6 +36,13 @@ export interface FrameworkManifest {
 export interface NormalizedWorkspace {
   /** Absolute path to the workspace.json file that was loaded. */
   sourcePath: string;
+  /**
+   * Absolute path to the repository root that stored keys are relative to,
+   * derived from the matched artifact location — NOT `dirname(sourcePath)`,
+   * which is one level short for the canonical `.agents/workspace.json` layout.
+   * This is the root an absolute host query must be proven contained by.
+   */
+  repositoryRoot: string;
   /** Standard/schema version string if present (e.g. "0.4"). */
   version?: string;
   fragileFiles: FragileFile[];
