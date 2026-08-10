@@ -67,11 +67,25 @@ const r3 = await client.callTool({
   arguments: { path: "./src/routes/checkout.ts" },
 });
 check("leading ./ normalizes to exact key match", r3.structuredContent?.fragile === true);
+// ADR-006 §8 / META-291. An absolute path is resolved against the PROVEN
+// repository root and compared exactly — there is no suffix fallback. This also
+// exercises repositoryRootFor end-to-end: the artifact lives at
+// fixture/.agents/workspace.json, so a root derived with a plain dirname() would
+// be `fixture/.agents`, one level short, and this in-root path would NOT match.
 const r4 = await client.callTool({
+  name: "workspace_get_file_context",
+  arguments: { path: resolve(fixtureRoot, "src/routes/checkout.ts") },
+});
+check("absolute path inside the proven root resolves to the stored key", r4.structuredContent?.fragile === true);
+const r4b = await client.callTool({
   name: "workspace_get_file_context",
   arguments: { path: "/abs/repo/src/routes/checkout.ts" },
 });
-check("absolute path falls back to boundary suffix match", r4.structuredContent?.fragile === true);
+check(
+  "absolute path in an unrelated repository does NOT suffix-match",
+  r4b.structuredContent?.fragile === false,
+  JSON.stringify(r4b.structuredContent?.fragile),
+);
 const r5 = await client.callTool({ name: "workspace_get_file_context", arguments: { path: "routes/checkout.ts" } });
 check(
   "bare partial relative path does NOT match (exact-first, no fuzzy)",
@@ -143,12 +157,30 @@ check(
 );
 const dAbs = await client.callTool({
   name: "workspace_assess_change",
+  arguments: {
+    paths: [
+      resolve(fixtureRoot, "src/routes/checkout.ts"),
+      resolve(fixtureRoot, "src/auth/session.ts"),
+      resolve(fixtureRoot, "src/lib/format.ts"),
+    ],
+  },
+});
+check(
+  "absolute-path partners inside the proven root ARE credited -> warn",
+  dAbs.structuredContent?.action === "warn",
+  JSON.stringify(dAbs.structuredContent?.action),
+);
+// The other half of audit Critical #1: under the suffix fallback these paths
+// from an UNRELATED checkout credited the partners and silently downgraded the
+// deny to a warn. Coverage now requires containment in the proven root.
+const dAbsOutside = await client.callTool({
+  name: "workspace_assess_change",
   arguments: { paths: ["/x/repo/src/routes/checkout.ts", "/x/repo/src/auth/session.ts", "/x/repo/src/lib/format.ts"] },
 });
 check(
-  "absolute-path partners ARE credited -> warn",
-  dAbs.structuredContent?.action === "warn",
-  JSON.stringify(dAbs.structuredContent?.action),
+  "absolute-path partners OUTSIDE the root are NOT credited -> no false warn",
+  dAbsOutside.structuredContent?.action === "none",
+  JSON.stringify(dAbsOutside.structuredContent?.action),
 );
 
 // ── Audit #5: directly exercise the two tools smoke previously only registered ──

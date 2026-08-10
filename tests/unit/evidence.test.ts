@@ -9,6 +9,11 @@ import {
   verifyRecord,
 } from "../../src/evidence.js";
 
+// The enforcement layer resolves changeset paths against the same proven root as
+// the read layer. These fixtures are repo-relative, so the value only has to be a
+// plausible root; the point is that both layers now demand one.
+const REPO_ROOT = "/abs/repo";
+
 describe("normalizeEvidence", () => {
   it("returns an empty array for non-array inputs", () => {
     expect(normalizeEvidence(undefined)).toEqual([]);
@@ -120,6 +125,7 @@ describe("decideEnforcement", () => {
       evidence: [{ claim: "revert d4e5f6" }],
       coChangePartners: ["src/auth/session.ts", "src/lib/format.ts"],
       changesetPaths: ["src/routes/checkout.ts"],
+      repositoryRoot: REPO_ROOT,
     });
     expect(result.action).toBe("deny");
     expect(result.message).toContain("BLOCK");
@@ -140,6 +146,7 @@ describe("decideEnforcement", () => {
       evidence: [{ claim: "revert d4e5f6" }],
       coChangePartners: ["src/auth/session.ts"],
       changesetPaths: ["src/routes/checkout.ts", "src/auth/session-helper.ts"],
+      repositoryRoot: REPO_ROOT,
       override: true,
     };
 
@@ -147,6 +154,38 @@ describe("decideEnforcement", () => {
 
     expect(result.action).toBe("deny");
     expect(result.missingPartners).toEqual(["src/auth/session.ts"]);
+  });
+
+  // ADR-006 §8 / META-291, guarding audit Critical #1 from the other direction:
+  // under the suffix fallback an absolute changeset path from an UNRELATED
+  // checkout counted as covering a partner, silently downgrading deny -> warn.
+  // Coverage now requires the path to resolve inside the proven root.
+  it("does not let a path outside the root cover a partner and downgrade a deny", () => {
+    const result = decideEnforcement({
+      path: "src/routes/checkout.ts",
+      fragile: true,
+      tier: "OBSERVED",
+      evidence: [{ claim: "revert d4e5f6" }],
+      coChangePartners: ["src/auth/session.ts"],
+      changesetPaths: ["src/routes/checkout.ts", "/elsewhere/unrelated-repo/src/auth/session.ts"],
+      repositoryRoot: REPO_ROOT,
+    });
+    expect(result.action).toBe("deny");
+    expect(result.missingPartners).toEqual(["src/auth/session.ts"]);
+  });
+
+  it("lets an absolute path inside the root cover a partner", () => {
+    const result = decideEnforcement({
+      path: "src/routes/checkout.ts",
+      fragile: true,
+      tier: "OBSERVED",
+      evidence: [{ claim: "revert d4e5f6" }],
+      coChangePartners: ["src/auth/session.ts"],
+      changesetPaths: ["src/routes/checkout.ts", `${REPO_ROOT}/src/auth/session.ts`],
+      repositoryRoot: REPO_ROOT,
+    });
+    expect(result.action).toBe("warn");
+    expect(result.missingPartners).toEqual([]);
   });
 
   it("warns when evidenced fragility is touched but partners are covered", () => {
@@ -158,6 +197,7 @@ describe("decideEnforcement", () => {
       evidence: [{ claim: "revert d4e5f6" }],
       coChangePartners: ["src/auth/session.ts"],
       changesetPaths: ["src/routes/checkout.ts", "src/auth/session.ts"],
+      repositoryRoot: REPO_ROOT,
     });
     expect(result.action).toBe("warn");
     expect(result.message).toContain("CAUTION");
@@ -171,6 +211,7 @@ describe("decideEnforcement", () => {
       evidence: [],
       coChangePartners: ["src/db/client.ts"],
       changesetPaths: ["src/lib/new.ts"],
+      repositoryRoot: REPO_ROOT,
     });
     expect(result.action).toBe("warn");
     expect(result.message).toContain("ADVISORY");
@@ -184,6 +225,7 @@ describe("decideEnforcement", () => {
       evidence: [],
       coChangePartners: [],
       changesetPaths: ["src/auth/session.ts"],
+      repositoryRoot: REPO_ROOT,
     });
     expect(result.action).toBe("annotate");
     expect(result.message).toContain("NOTE");
@@ -197,6 +239,7 @@ describe("decideEnforcement", () => {
       evidence: [],
       coChangePartners: ["src/lib/format.ts"],
       changesetPaths: ["src/auth/session.ts"],
+      repositoryRoot: REPO_ROOT,
     });
     expect(result.action).toBe("warn");
   });
@@ -209,6 +252,7 @@ describe("decideEnforcement", () => {
       evidence: [],
       coChangePartners: [],
       changesetPaths: ["src/lib/does-not-exist.ts"],
+      repositoryRoot: REPO_ROOT,
     });
     expect(result.action).toBe("none");
     expect(result.message).toContain("not evidence of safety");
