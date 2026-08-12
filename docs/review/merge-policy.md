@@ -78,6 +78,24 @@ governance decision from the reviewer question this document's owner issue cover
 and it is recorded here so it is not mistaken for a setting someone already chose
 deliberately. Changing it is out of scope for META-322.
 
+### Refreshing this section
+
+Everything in the two tables above is a live GitHub setting that can be changed
+outside this repository, which makes the section the most perishable part of this
+document. Re-read it rather than trusting it whenever it matters:
+
+```bash
+gh api repos/workspacejson/integrations/branches/main/protection
+gh api repos/workspacejson/integrations/rulesets
+```
+
+If the output disagrees with what is written here, the API is right and this file
+is stale — treat that as a documentation defect, and correct it in the PR that
+noticed. A merge-eligibility claim that has drifted from the setting it describes
+is worse than no claim, because it will be believed.
+
+Measured on 2026-08-12 against `main` at `a31242b`.
+
 ## 3. Conversation resolution
 
 `required_conversation_resolution` is already enabled, which makes unresolved
@@ -95,8 +113,9 @@ The protocol:
 
 ## 4. `Greptile Review` as a required check
 
-**Current state: not required. Not eligible to be required on installation
-evidence alone.**
+**Current state: not required. Measured as eligible — see
+[`calibration-2026-08.md`](calibration-2026-08.md) — with the required-contexts
+change left as an explicit, separately-owned step.**
 
 The bar for adding `Greptile Review` to the required-contexts list is behavioral,
 not configurational. Each of the following must be observed on this repository —
@@ -117,8 +136,18 @@ to make the check required — a reviewer that does not catch the defect it was
 configured to catch would, as a required gate, block merges without adding
 detection. Installing an app and seeing a green check is not calibration.
 
-Calibration results for this repository are recorded in
+All seven were observed on 2026-08-12; results, exact SHAs, and check states are in
 [`calibration-2026-08.md`](calibration-2026-08.md).
+
+**One result changes how the requirement should be read.** The `Greptile Review`
+check concluded `success` on the head that carried a P1 finding. The check encodes
+*review completed*, not *review found nothing*. Requiring the context therefore buys
+current-head review completion; the semantic gate is `required_conversation_resolution`,
+and the two are only meaningful together.
+
+And that gate is itself softer than it appears: GitHub auto-resolves a thread whose
+lines a later commit removed, so resolution can be satisfied without anyone
+answering the finding. Hence §3 — the receipt has to be written into the thread.
 
 ## 5. What a check state does and does not mean
 

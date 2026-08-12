@@ -8,6 +8,13 @@ and ADRs.
 The rules below are enforced as structured rules in `config.json` and elaborated
 here in prose so the reasoning is reviewable alongside the code.
 
+> **`config.json` is authoritative for scope.** The `Scope:` line under each rule
+> here restates that rule's `scope` array so the reasoning is readable in one
+> place, which means the two can drift. If they ever disagree, `config.json` is
+> what the reviewer actually applies and this file is the thing to correct. As of
+> the commit that introduced them, all nine scoped rules match exactly, and the
+> five ecosystem-wide rules carry no `scope` key and no `Scope:` line.
+
 Every Integrations-specific rule names the **verified failure class** it was
 derived from — an observable surface or a recorded defect in this repository, not
 a rule inherited because another repository has one. Rules that could not be
