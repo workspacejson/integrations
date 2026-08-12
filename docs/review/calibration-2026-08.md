@@ -178,29 +178,47 @@ The test still asserts the pre-META-291 absolute-suffix fallback, so it is red o
 both heads for opposite reasons, and no gate runs it. Tracked as **META-329**, not
 repaired here.
 
-## Decision
+## Decision — ratified and applied 2026-08-12
 
-`Greptile Review` **is eligible** to become a required current-head merge gate on
-this repository. It fires, binds to the exact head, caught its positive control,
-stayed quiet on the clean head, and retriggers on push.
+`Greptile Review` **is required** on `main`, in the narrow role it demonstrably
+performs: it fires, binds to the exact head, caught its positive control, stayed
+quiet on the clean head, and retriggers on push.
 
-Recommended change — **not applied by META-322**, because it has a side effect on
-another stream's open PR:
+The ratified contract is two-part:
 
-```
-required_status_checks.contexts += "Greptile Review"
-```
+1. `Greptile Review` required status — **the current head was actually reviewed**;
+2. the already-enabled `required_conversation_resolution` — **actionable findings
+   are not left open**.
 
-Two things must be understood by whoever applies it:
+Greptile status is **not** semantic approval. Its concluding `success` on the canary
+head carrying a P1 is not a defect in the gate, because the status was assigned only
+the completion role. The semantic half is conversation resolution plus the written
+per-finding protocol in [`merge-policy.md`](merge-policy.md) §3.
 
-* It enforces **review completion on the current head**, not absence of findings —
-  see *The check state does not encode findings*. Pairing it with the already-enabled
-  `required_conversation_resolution` is what makes the combination meaningful.
-* PR #6 is currently `BEHIND` and predates the policy. Adding the context requires
-  it to update and take a Greptile run before it can merge. That is a cost to a PR
-  this issue does not own, which is why the mutation is left as an explicit,
-  separately-owned step rather than made silently here.
+### Branch protection, before and after
+
+| Setting | Before (`a31242b`) | After (`f61e0cb`) |
+| --- | --- | --- |
+| Required contexts | `build-and-smoke (20)`, `build-and-smoke (22)` | `build-and-smoke (20)`, `build-and-smoke (22)`, **`Greptile Review`** (app id `867647`) |
+| `strict` | `true` | `true` — preserved |
+| `required_conversation_resolution` | `true` | `true` — preserved |
+| `required_approving_review_count` | `0` | `0` — preserved |
+| `dismiss_stale_reviews` | `true` | `true` — preserved |
+| `enforce_admins` | `false` | `false` — preserved |
+| `allow_force_pushes` / `allow_deletions` | `false` / `false` | unchanged |
+| `Sourcery review` required | no | **no — deliberately not promoted** |
+| Rulesets | `[]` | `[]` |
+
+Verified by an independent read-back of the protection API, not from the write
+response.
+
+### Deliberately accepted cost
+
+PR #6 predates the policy and its head carries no Greptile run at all, so it cannot
+satisfy the context until it updates. Requiring it to update and receive a
+current-policy review is the intended effect of a stricter merge contract, not
+collateral damage to be designed around. The gate was not weakened to preserve it.
 
 The two unrequired CI contexts (`parity-receipt-reproduction`,
-`standard-candidate-consumption`) are a separate question, recorded in
+`standard-candidate-consumption`) remain a separate question, recorded in
 [`merge-policy.md`](merge-policy.md) §2 and deliberately untouched.
