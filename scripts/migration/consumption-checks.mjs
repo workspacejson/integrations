@@ -261,13 +261,39 @@ export function checkAssessDecision(result) {
 // ── Step 5: hook behaviour ────────────────────────────────────────────────
 
 /**
- * The hook must actively deny — launch, run, and exit non-zero. A hook that
- * cannot launch at all is a failure of the packed artifact, not a denial.
+ * Node exited non-zero because it could not run the script at all, rather than
+ * because the script decided something.
+ *
+ * `node <missing-or-broken-script>` launches successfully — the node binary
+ * exists — and exits 1 after failing to load. A predicate that only asks
+ * "non-zero?" reads that crash as a deny, so a candidate shipping NO hook at
+ * all scores a passing deny check. This is the same vacuous-pass shape as the
+ * original `status !== 0`, one level further in, and it was caught by running
+ * the harness against a candidate with `hooks/` removed from `files` rather
+ * than by any unit case.
+ */
+function crashedInsteadOfRunning(result) {
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+  if (/ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION|Cannot find module/.test(output)) {
+    return "node could not load the hook script (module not found)";
+  }
+  if (/^\s*at .*node:internal/m.test(output) && /Error\b/.test(output)) {
+    return "node exited on an unhandled error before the hook reached a decision";
+  }
+  return null;
+}
+
+/**
+ * The hook must actively deny — launch, run to a decision, and exit non-zero.
+ * A hook that cannot launch, or that crashes before deciding, is a failure of
+ * the packed artifact, not a denial.
  */
 export function checkHookDenies(result) {
   const problem = launched(result);
   if (problem) return fail(`hook did not run: ${problem}`);
   if (result.status === 0) return fail("hook exited 0; expected a non-zero deny on an evidenced-fragile path");
+  const crash = crashedInsteadOfRunning(result);
+  if (crash) return fail(`${crash} — exit ${result.status} is a crash, not a deny`);
   return pass(`exit ${result.status}`);
 }
 

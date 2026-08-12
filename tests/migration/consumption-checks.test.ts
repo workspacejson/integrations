@@ -293,6 +293,44 @@ describe(covers("hook.denies"), () => {
     expect(r.passed).toBe(false);
     expect(r.detail).toMatch(/did not exit normally/);
   });
+
+  // The same vacuous pass one level further in, found by running the harness
+  // against a candidate built with `hooks/` removed from package.json files[].
+  // `node <missing script>` launches fine and exits 1, so every "did it launch
+  // and exit non-zero" predicate reads a candidate that ships NO hook as a
+  // passing deny. Unit cases alone did not catch this; the end-to-end broken
+  // candidate did.
+  it("red: node exited 1 because the hook script was missing, not because it denied", () => {
+    const moduleNotFound = okProc({
+      status: 1,
+      stderr:
+        "node:internal/modules/esm/resolve:275\n    throw new ERR_MODULE_NOT_FOUND(\n          ^\n" +
+        "Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/pkg/hooks/pre-edit-check.mjs'\n" +
+        "    at finalizeResolution (node:internal/modules/esm/resolve:275:11)\n",
+    });
+    expect(moduleNotFound.status !== 0).toBe(true); // still non-zero
+    const r = checkHookDenies(moduleNotFound);
+    expect(r.passed).toBe(false);
+    expect(r.detail).toMatch(/module not found.*is a crash, not a deny/);
+  });
+
+  it("red: hook threw before reaching a decision", () => {
+    const threw = okProc({
+      status: 1,
+      stderr: "Uncaught TypeError: cannot read properties of undefined\n    at run (node:internal/main/run_main:1:1)\n",
+    });
+    expect(checkHookDenies(threw).passed).toBe(false);
+  });
+
+  // The deny path must not be collateral damage: a real deny that happens to
+  // print a stack-shaped evidence line still passes.
+  it("green: a genuine deny whose message mentions a path is not mistaken for a crash", () => {
+    const deny = okProc({
+      status: 2,
+      stdout: "DENY: src/routes/checkout.ts is FRAGILE at src/routes/checkout.ts:14 — include co-change partners",
+    });
+    expect(checkHookDenies(deny).passed).toBe(true);
+  });
 });
 
 describe(covers("hook.output-mentions-deny"), () => {
