@@ -47,6 +47,13 @@ Nothing in this document elevates Sourcery on the basis of its check state.
 
 Values below were read from the GitHub branch-protection API for `main`.
 
+> **Division of responsibility.** This document is the *current contract*: what is
+> required now and how to read it. [`calibration-2026-08.md`](calibration-2026-08.md)
+> is the *evidence and change record*: the before/after protection state, the
+> calibration that justified the change, and the SHAs it was measured on. When a
+> setting changes, the new state is recorded here and the transition is recorded
+> there — so the two are not two copies of the same claim.
+
 | Setting | Measured value |
 | --- | --- |
 | Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, **`Greptile Review`** |
@@ -111,7 +118,11 @@ is stale — treat that as a documentation defect, and correct it in the PR that
 noticed. A merge-eligibility claim that has drifted from the setting it describes
 is worse than no claim, because it will be believed.
 
-Measured on 2026-08-12 against `main` at `a31242b`.
+Measured on 2026-08-12 against `main` at `f61e0cb`, immediately after
+`Greptile Review` was added to the required contexts. The earlier reading in
+[`calibration-2026-08.md`](calibration-2026-08.md) — `main` at `a31242b`, two
+required contexts — is the pre-policy baseline and is kept there as the *before*
+half of the record, not as a description of current state.
 
 ## 3. Conversation resolution
 

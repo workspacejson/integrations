@@ -222,7 +222,3 @@ collateral damage to be designed around. The gate was not weakened to preserve i
 The two unrequired CI contexts (`parity-receipt-reproduction`,
 `standard-candidate-consumption`) remain a separate question, recorded in
 [`merge-policy.md`](merge-policy.md) §2 and deliberately untouched.
-
-The two unrequired CI contexts (`parity-receipt-reproduction`,
-`standard-candidate-consumption`) are a separate question, recorded in
-[`merge-policy.md`](merge-policy.md) §2 and deliberately untouched.
