@@ -1,0 +1,126 @@
+{
+  "strictness": 1,
+  "triggerOnUpdates": true,
+  "triggerOnDrafts": true,
+  "statusCheck": true,
+  "ignorePatterns": "node_modules/**\nextension/node_modules/**\ndist/**\nvsix/**\ncoverage/**\n.parity-ci/**\n.git/**\npackage-lock.json\nextension/package-lock.json",
+  "summarySection": {
+    "included": true,
+    "collapsible": true,
+    "defaultOpen": false
+  },
+  "issuesTableSection": {
+    "included": true,
+    "collapsible": false
+  },
+  "confidenceScoreSection": {
+    "included": true,
+    "collapsible": true,
+    "defaultOpen": false
+  },
+  "instructions": "This repository is workspacejson/integrations. It owns host adaptation, delivery, packaging, hooks, installers, and first-party adapter parity for workspace.json. It CONSUMES the public workspace.json contract; it does not own, copy, repair, or re-specify it — workspacejson/standard owns schema, validation semantics, rules, and ADRs. Published surface: the @workspacejson/codex-mcp npm package (MCP server, Codex hook, installer) and the VS Code extension. Two things make this repository's failure modes distinct from standard's: (1) it reads an artifact it did not produce, on a host machine, so path identity, tolerance, and unavailability semantics are the risk surface, not schema correctness; (2) it ships a packed artifact whose runtime layout differs from the source tree — dist/ is gitignored, hooks/pre-edit-check.mjs resolves ../dist/* at runtime, and package.json 'files' governs what a consumer actually receives, so source-only tests do not prove shipped behavior. The repository is read-only and descriptive toward the artifact: it surfaces and adapts evidence, and never rewrites, repairs, or adds policy to workspace.json. It is a public, clean-room repository: no private organizational tracker id, private sidecar artifact, private source reference, or running-daemon assumption may appear in any file, including comments. See .greptile/rules.md for each rule's verified failure class and the rules deliberately NOT carried over from workspacejson/standard.",
+  "rules": [
+    {
+      "id": "evidence-load-bearing",
+      "rule": "Evidence claims must be load-bearing. A verification check that cannot fail proves nothing. If a test, guard, smoke assertion, or receipt comparison is added or changed, it must be capable of failing for the defect it names. A check whose subject is stubbed, mocked away, or unreachable is documentation, not verification.",
+      "severity": "high"
+    },
+    {
+      "id": "absence-not-success",
+      "rule": "Absence, skipped, unsupported, or unavailable is never success, false, safe, empty, allow, or green. A gate that goes green because it could not find the thing it measures reports conformance it never measured. Missing evidence must be reported as missing. This applies to CI jobs, smoke checks, parity receipts, and host adapters alike.",
+      "severity": "high"
+    },
+    {
+      "id": "metrics-perturb",
+      "rule": "Metrics and receipts must perturb when their referent changes. A parity receipt, hash, count, or score that does not move when the thing it measures moves is decorative, not a measurement. If a receipt or metric is added or updated, it must be shown to respond to a change in its input.",
+      "severity": "high"
+    },
+    {
+      "id": "bidirectional-checks",
+      "rule": "Every verification check must be considered in both directions: cannot-ever-pass and cannot-ever-fail. A guard that denies everything and a guard that allows everything both look identical to a working guard from a green build. When a check is added or modified, both failure directions must be reasoned about.",
+      "severity": "high"
+    },
+    {
+      "id": "clean-room-public-boundary",
+      "rule": "This is a public, clean-room repository. No private organizational tracker identifier (for example VR-nnn, HAC-nnn), no private product or platform name, no private sidecar artifact, no cross-organization implementation dependency, and no assumption that a daemon or live service is running may appear in any file, including source comments, docs, config, and test fixtures. Public issue references (META-nnn, ADR-nnn) and public package names are fine. The artifact and this integration must remain meaningful with nothing running.",
+      "severity": "high"
+    },
+    {
+      "id": "consume-standard-do-not-vendor",
+      "rule": "This repository consumes the public workspace.json contract; it must not vendor or reimplement it. Do not add a copied JSON Schema, a parallel validator, a re-derived rules engine, or a second definition of conformance here. Reading and normalizing the artifact into a local consumer model is correct; asserting normative validity, or repairing the artifact toward a schema, belongs to workspacejson/standard. If a contract gap blocks work, the fix is an upstream issue, not a local reimplementation.",
+      "scope": ["src/**", "extension/src/**", "hooks/**", "scripts/**"],
+      "severity": "high"
+    },
+    {
+      "id": "reader-tolerance-is-not-repair",
+      "rule": "Reader tolerance must never become repair or mutation of the committed artifact. Normalization may degrade to empty and may accept legacy shapes, but it must not fabricate values, invent defaults that are then presented as producer output, or write back to workspace.json. No code path that reads the artifact may open it for writing. Tolerating an unknown shape is not the same as declaring it valid.",
+      "scope": ["src/services/**", "src/tools/**", "src/evidence.ts", "hooks/**", "extension/src/**"],
+      "severity": "high"
+    },
+    {
+      "id": "proven-root-path-identity",
+      "rule": "Path identity follows ratified ADR-006 §4/§8. An absolute host query is comparable only after containment in a repository root the caller has PROVEN; if containment cannot be proven the answer is no-match, which is a refusal, never a nearest guess. Do not introduce suffix matching, basename matching, endsWith comparison, symmetric fuzzy matching, or an optional/defaulted root parameter that lets an absolute query silently degrade. Stored keys are repo-root-relative POSIX. The removed suffix fallback matched a stored src/a.ts against /elsewhere/unrelated-repo/src/a.ts — an assertion landing on a file in a different repository.",
+      "scope": [
+        "src/path-match.ts",
+        "src/services/**",
+        "src/tools/**",
+        "src/evidence.ts",
+        "extension/src/pathMatch.ts",
+        "extension/src/**",
+        "hooks/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "ported-copies-must-not-diverge",
+      "rule": "src/path-match.ts and extension/src/pathMatch.ts are the same contract expressed twice: the extension is a standalone package with no build-time dependency on the server, so the matcher is ported by hand rather than imported. A change to the semantics of one without a corresponding change or an explicit written reconciliation for the other is a divergence defect, not a local edit. A second, drifted matcher is how a deny silently became a warn once already. The same applies to any other capability duplicated between the server and a host adapter.",
+      "scope": ["src/path-match.ts", "extension/src/pathMatch.ts", "src/**", "extension/src/**"],
+      "severity": "high"
+    },
+    {
+      "id": "unavailable-is-not-approval",
+      "rule": "Malformed, absent, unreadable, or unsupported artifact state must remain observable and distinct, and must never be rendered as approval or as a clean result. A hook that cannot load the artifact must say no determination was made; it must not emit an approve, and silence must not read as endorsement. A reviewer or verdict surface must keep UNAVAILABLE distinct from PASS, and PASS must mean no blocking issue was found in the examined scope, never a safety certification. Do not collapse an error branch into the same output as a clean branch.",
+      "scope": [
+        "hooks/**",
+        "src/reviewer.ts",
+        "src/tools/**",
+        "src/services/**",
+        "src/evidence.ts",
+        "extension/src/reviewerVerdict.ts",
+        "extension/src/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "host-adaptation-stays-descriptive",
+      "rule": "This repository adapts and surfaces what the artifact describes; it does not turn workspace.json into prescriptive policy. Do not write policy, approval, gate, or merge-blocking fields into the artifact, and do not document the standard as mandating an action. Host-side enforcement driven by observed evidence (for example a pre-edit hook decision) is in scope for this repository, but it must be presented as this integration's behavior over described evidence, never as a requirement the standard imposes.",
+      "scope": ["src/**", "extension/src/**", "hooks/**", "docs/**", "README.md"],
+      "severity": "high"
+    },
+    {
+      "id": "packed-artifact-must-be-measured",
+      "rule": "Shipped behavior must be measured on the packed or installed artifact, not inferred from source-only tests. dist/ is gitignored and hooks/pre-edit-check.mjs resolves ../dist/* at runtime, so package.json 'files', 'bin', 'exports', the build step, and the hook's runtime resolution can break the shipped package while every source test still passes. Any change to those surfaces needs evidence from a pack, install, or equivalent packaged run. A source-tree test passing is not evidence that a consumer receives working files.",
+      "scope": [
+        "package.json",
+        "extension/package.json",
+        "scripts/install.mjs",
+        "hooks/**",
+        ".github/workflows/**",
+        "tests/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "probes-must-not-be-destructive",
+      "rule": "A command presented as harmless — help, version, status, check, probe, dry run, smoke — must not perform destructive or installing work. It must not install or uninstall an extension, delete or overwrite files outside a disposable temporary directory it created, mutate the user's or the repository's checkout, or write into the source repository under test. Destructive setup and teardown must be confined to a temp root the script created and must be named as such. If a check needs a real install to be meaningful, it must be explicitly opt-in and must say so.",
+      "scope": ["scripts/**", "hooks/**", ".github/workflows/**"],
+      "severity": "high"
+    },
+    {
+      "id": "host-contract-claims-need-a-watched-version",
+      "rule": "Host output contracts are observed facts about a specific host version, not stable APIs. A claim that a host contract works — a Codex hook permissionDecision or exit-code channel, a VS Code API behavior, an editor CLI flag — must name the host version and the date it was watched, and the adapter point must stay single and identifiable. Do not widen, silently re-target, or add a second emission channel for a host contract without recording the version it was verified against. An unversioned claim that a host accepts an output shape is unverified.",
+      "scope": ["hooks/**", "scripts/install.mjs", "extension/src/**", "src/index.ts", "docs/**"],
+      "severity": "high"
+    }
+  ]
+}
