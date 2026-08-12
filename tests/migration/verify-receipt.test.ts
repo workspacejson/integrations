@@ -1,4 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+// The comparator under test is imported, never reimplemented. An earlier
+// version of this file rebuilt `compareReceipts` inline, so the tests verified
+// a copy: the real comparator could regress without a single test failing, and
+// the copy's violation messages had already drifted from the source
+// (META-140 one-concept-two-implementations class, recorded on META-285).
+import { compareReceipts, readReceipt } from "../../scripts/migration/verify-receipt.mjs";
 
 interface ReceiptCheck {
   id: string;
@@ -13,63 +22,6 @@ interface Receipt {
   intentionalDifferences: Array<{ path: string; justification: string }>;
   checks: ReceiptCheck[];
   [key: string]: unknown;
-}
-
-// We test the comparison logic by importing the module and calling its
-// internal function. Since verify-receipt.mjs is a CLI script, we test
-// the core comparator by reconstructing it inline from the same logic.
-// This is a watched-red contract: the comparator must fail on perturbed input.
-
-function compareReceipts(reference: Receipt, candidate: Receipt): string[] {
-  const violations = [];
-
-  if (reference.verdict !== candidate.verdict) {
-    violations.push(`verdict diverged: reference=${reference.verdict} candidate=${candidate.verdict}`);
-  }
-
-  for (const field of ["total", "passed", "failed", "unsupported"] as const) {
-    if (reference.summary[field] !== candidate.summary[field]) {
-      violations.push(
-        `summary.${field} diverged: reference=${reference.summary[field]} candidate=${candidate.summary[field]}`,
-      );
-    }
-  }
-
-  const refChecks = new Map(reference.checks.map((c) => [c.id, c]));
-  const candChecks = new Map(candidate.checks.map((c) => [c.id, c]));
-
-  const missingInCandidate = [...refChecks.keys()].filter((id) => !candChecks.has(id));
-  const missingInReference = [...candChecks.keys()].filter((id) => !refChecks.has(id));
-
-  for (const id of missingInCandidate) {
-    violations.push(`check '${id}' present in reference but missing from candidate`);
-  }
-  for (const id of missingInReference) {
-    violations.push(`check '${id}' present in candidate but missing from reference`);
-  }
-
-  for (const [id, refCheck] of refChecks) {
-    const candCheck = candChecks.get(id);
-    if (!candCheck) continue;
-
-    if (refCheck.status !== candCheck.status) {
-      violations.push(`check '${id}' status diverged: reference=${refCheck.status} candidate=${candCheck.status}`);
-    }
-
-    const refViolations = JSON.stringify(refCheck.violations ?? []);
-    const candViolations = JSON.stringify(candCheck.violations ?? []);
-    if (refViolations !== candViolations) {
-      violations.push(`check '${id}' violations diverged`);
-    }
-  }
-
-  const refDiffs = JSON.stringify(reference.intentionalDifferences ?? []);
-  const candDiffs = JSON.stringify(candidate.intentionalDifferences ?? []);
-  if (refDiffs !== candDiffs) {
-    violations.push("intentionalDifferences diverged");
-  }
-
-  return violations;
 }
 
 const BASE_RECEIPT: Receipt = {
@@ -91,7 +43,7 @@ const BASE_RECEIPT: Receipt = {
 };
 
 describe("compareReceipts", () => {
-  it("passes identical receipts ignoring non-deterministic fields", () => {
+  it("watched-green: passes identical receipts ignoring non-deterministic fields", () => {
     const candidate: Receipt = structuredClone(BASE_RECEIPT);
     candidate.generatedAt = "2026-08-01T12:00:00.000Z";
     candidate.startedAt = "2026-08-01T11:59:30.000Z";
@@ -113,38 +65,112 @@ describe("compareReceipts", () => {
     expect(violations.some((v) => /verdict diverged/.test(v))).toBe(true);
   });
 
+  it("watched-red: catches a summary count change", () => {
+    const candidate: Receipt = structuredClone(BASE_RECEIPT);
+    candidate.summary.unsupported = 2;
+    const violations = compareReceipts(BASE_RECEIPT, candidate);
+    expect(violations.some((v) => /summary\.unsupported diverged/.test(v))).toBe(true);
+  });
+
   it("watched-red: catches a check status flip", () => {
     const candidate: Receipt = structuredClone(BASE_RECEIPT);
     candidate.checks[4].status = "fail";
     candidate.checks[4].violations = ["smoke failed"];
     const violations = compareReceipts(BASE_RECEIPT, candidate);
-    expect(violations.some((v) => /check 'mcp.smoke' status diverged/.test(v))).toBe(true);
+    expect(violations.some((v) => /check 'mcp\.smoke' status diverged/.test(v))).toBe(true);
   });
 
   it("watched-red: catches a missing check", () => {
     const candidate: Receipt = structuredClone(BASE_RECEIPT);
     candidate.checks = candidate.checks.slice(0, 9);
     const violations = compareReceipts(BASE_RECEIPT, candidate);
-    expect(violations.some((v) => /'generator.resolution' present in reference but missing/.test(v))).toBe(true);
+    expect(violations.some((v) => /'generator\.resolution' present in reference but missing/.test(v))).toBe(true);
   });
 
   it("watched-red: catches an extra check", () => {
     const candidate: Receipt = structuredClone(BASE_RECEIPT);
     candidate.checks.push({ id: "evil.check", status: "pass", violations: [], evidence: {} });
     const violations = compareReceipts(BASE_RECEIPT, candidate);
-    expect(violations.some((v) => /'evil.check' present in candidate but missing/.test(v))).toBe(true);
+    expect(violations.some((v) => /'evil\.check' present in candidate but missing/.test(v))).toBe(true);
   });
 
   it("watched-red: catches new violations in a previously clean check", () => {
     const candidate: Receipt = structuredClone(BASE_RECEIPT);
     candidate.checks[2].violations = ["package.version diverged"];
     const violations = compareReceipts(BASE_RECEIPT, candidate);
-    expect(violations.some((v) => /check 'pkg.identity' violations diverged/.test(v))).toBe(true);
+    expect(violations.some((v) => /check 'pkg\.identity' violations diverged/.test(v))).toBe(true);
   });
 
   it("watched-red: catches changed intentionalDifferences", () => {
     const candidate: Receipt = structuredClone(BASE_RECEIPT);
     candidate.intentionalDifferences = [{ path: "README.md", justification: "changed" }];
     expect(compareReceipts(BASE_RECEIPT, candidate).some((v) => /intentionalDifferences diverged/.test(v))).toBe(true);
+  });
+
+  // Asserted against the real comparator's exact text. While the test owned a
+  // copy, these strings could drift from the shipped ones unnoticed — and had.
+  it("reports the actual reference and candidate values in the violation text", () => {
+    const candidate: Receipt = structuredClone(BASE_RECEIPT);
+    candidate.verdict = "DIVERGENT";
+    const [violation] = compareReceipts(BASE_RECEIPT, candidate);
+    expect(violation).toBe("verdict diverged: reference=PARITY candidate=DIVERGENT");
+  });
+
+  // A comparator that accepts a structurally empty receipt compares two empty
+  // check sets as identical — a pass that proves nothing about parity.
+  it("refuses a receipt with an empty check set rather than comparing it clean", () => {
+    const empty: Receipt = structuredClone(BASE_RECEIPT);
+    empty.checks = [];
+    expect(() => compareReceipts(empty, structuredClone(empty))).toThrow(/'checks' is empty/);
+  });
+
+  it("refuses a receipt missing the fields it reads", () => {
+    const noSummary = { verdict: "PARITY", checks: BASE_RECEIPT.checks } as unknown as Receipt;
+    expect(() => compareReceipts(noSummary, structuredClone(BASE_RECEIPT))).toThrow(/missing 'summary' object/);
+
+    const noChecks = { verdict: "PARITY", summary: BASE_RECEIPT.summary } as unknown as Receipt;
+    expect(() => compareReceipts(structuredClone(BASE_RECEIPT), noChecks)).toThrow(/missing 'checks' array/);
+  });
+
+  it("names which side was malformed", () => {
+    const bad = { verdict: "PARITY", summary: {}, checks: [{ status: "pass" }] } as unknown as Receipt;
+    expect(() => compareReceipts(structuredClone(BASE_RECEIPT), bad)).toThrow(/candidate receipt is not a usable/);
+    expect(() => compareReceipts(bad, structuredClone(BASE_RECEIPT))).toThrow(/reference receipt is not a usable/);
+  });
+});
+
+describe("readReceipt", () => {
+  const dir = mkdtempSync(join(tmpdir(), "verify-receipt-test-"));
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it("reads a well-formed receipt", () => {
+    const path = join(dir, "good.json");
+    writeFileSync(path, JSON.stringify(BASE_RECEIPT));
+    expect(readReceipt(path, "reference receipt").verdict).toBe("PARITY");
+  });
+
+  // A CI gate that dies on a raw ENOENT stack tells the reader nothing about
+  // which receipt was missing or what was expected there.
+  it("fails with a legible message on a missing file, naming the role and path", () => {
+    const path = join(dir, "absent.json");
+    expect(() => readReceipt(path, "candidate receipt")).toThrow(/candidate receipt not found/);
+    expect(() => readReceipt(path, "candidate receipt")).toThrow(/Expected a parity receipt JSON file/);
+    expect(() => readReceipt(path, "candidate receipt")).not.toThrow(/ENOENT/);
+  });
+
+  it("fails with a legible message on malformed JSON", () => {
+    const path = join(dir, "malformed.json");
+    writeFileSync(path, "{ not json at all ");
+    expect(() => readReceipt(path, "reference receipt")).toThrow(/reference receipt is not valid JSON/);
+  });
+
+  it("fails when the file parses but is not a receipt object", () => {
+    const arrayPath = join(dir, "array.json");
+    writeFileSync(arrayPath, "[]");
+    expect(() => readReceipt(arrayPath, "reference receipt")).toThrow(/is not a receipt object[\s\S]*array/);
+
+    const scalarPath = join(dir, "scalar.json");
+    writeFileSync(scalarPath, "42");
+    expect(() => readReceipt(scalarPath, "candidate receipt")).toThrow(/is not a receipt object[\s\S]*number/);
   });
 });
