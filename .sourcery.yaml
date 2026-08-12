@@ -1,0 +1,18 @@
+# Sourcery configuration for workspacejson/integrations.
+#
+# Scope only. This file deliberately grants Sourcery no semantic rule authority:
+# on this repository Sourcery is defense in depth, a second review-completion
+# layer, and a `success` check from it is never evidence of semantic approval.
+# See docs/review/merge-policy.md §1. Semantic review rules are repo-owned and
+# live in .greptile/.
+#
+# The ignore list is build output and vendored trees only — nothing that would
+# hide a reviewable source surface.
+version: '1'
+
+ignore:
+  - node_modules
+  - extension/node_modules
+  - dist
+  - vsix
+  - .parity-ci

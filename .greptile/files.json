@@ -1,0 +1,44 @@
+{
+  "files": [
+    {
+      "path": "docs/failure-modes.md",
+      "description": "The degradation contract. Enumerates every condition where evidence is incomplete, wrong, or absent and states the required behavior for each — missing artifact, unparseable JSON, structurally invalid shape, pathless event, reviewer unavailable, installer collisions. Every row is exercised by `npm run smoke` or `tests/unit/installer.test.ts`, or marked as guaranteed by the absence of a connecting code path. Use it to judge whether a change silently converts an unavailable state into an approval or a clean result."
+    },
+    {
+      "path": "docs/operational-guarantees.md",
+      "description": "Seven guarantees, each cited to specific source and tests: missing evidence never becomes approval; malformed evidence never crashes the edit loop; reviewer output never controls deterministic enforcement; installation never overwrites unmanaged configuration; uninstall removes only owned artifacts; every VERIFIED claim maps to a reproducible command; the editor extension installs only with explicit consent. A change that weakens one of these is a boundary change, not an implementation detail."
+    },
+    {
+      "path": "docs/workspace-contract.md",
+      "description": "The consumer boundary. Names exactly which workspace.json fields this repository reads (manual.fragileFiles, manual.coChangePatterns, generated.fileIndex, generated.frameworkManifest) and states that src/services/workspace.ts is the single place that touches raw file shape — everything downstream depends on the normalized model in src/types.ts, never the raw file. Establishes that this repository consumes the standard rather than defining it."
+    },
+    {
+      "path": "src/path-match.ts",
+      "description": "THE path matcher for the server: the single definition of whether two paths denote the same file. Resolution is exact per ADR-006 §4/§8 with no suffix matching; `root` is a required parameter on purpose so an absolute query cannot silently degrade at a call site that forgot to pass one. Its header records why: a second, drifted matcher is how a deny silently became a warn, and the removed suffix fallback matched a stored key against a file in an unrelated repository (META-291)."
+    },
+    {
+      "path": "extension/src/pathMatch.ts",
+      "description": "The VS Code extension's hand-ported copy of the same path-identity contract, expressed in two steps (relativeWorkspacePath proves containment, then pathsMatch is exact equality) rather than one. Ported and not imported because the extension is a standalone package with no build-time dependency on the server. This file and src/path-match.ts must be reconciled together; divergence between them is a defect, not a local edit."
+    },
+    {
+      "path": "src/services/workspace.ts",
+      "description": "Artifact discovery and tolerant normalization. Contains the root-marker upward walk that never crosses a Git boundary, the central derivation of the proven repository root from the matched artifact candidate (not from a generic dirname, which would be one level short of `.agents/workspace.json`), and the single normalizer that touches raw file shape. Its contract is degrade-to-empty, never fabricate; producer-emitted tier and confidence values are dropped rather than trusted. No read path here may acquire a write."
+    },
+    {
+      "path": "hooks/pre-edit-check.mjs",
+      "description": "The Codex PreToolUse hook and the repository's host-contract adapter point. Decision semantics: deny on an evidenced-fragile file with omitted co-change partners, warn on evidenced fragility or missing partners, never approve. Every failure routes through emitUnavailable, which states that no determination was made. The Codex output contract (permissionDecision / additionalContext JSON, exit code 2 = block) is recorded as watched live on Codex 0.144.1 (2026-07-13), and emitDecision() is deliberately the only place that speaks it. It resolves ../dist/* at runtime, so it depends on build output rather than on the source tree."
+    },
+    {
+      "path": "package.json",
+      "description": "Defines what a consumer actually receives: the `files` allowlist (dist, hooks, scripts/install.mjs, .codex-plugin, .mcp.json, vsix, README.md, LICENSE), the two `bin` commands mapping to scripts/install.mjs, the `exports` map, and the check/verify/pack pipeline. dist/ is gitignored but shipped, so this file is the seam where a green source test can coexist with a broken published package."
+    },
+    {
+      "path": "docs/verification.md",
+      "description": "Honest verification tiers for this repository's own claims — what the smoke suite actually drives versus what was watched live on a specific host version. Records the Codex 0.144.1 (2026-07-13) observation in detail and notes that the output contract and manifest remain isolated to single adapter points. The model for how a host-contract claim must be stated: named version, named date, named observation."
+    },
+    {
+      "path": "AGENTS.md",
+      "description": "Working discipline for agents in this repository and in repositories that install it: check before you edit, absence is not approval, trust evidence rather than labels, and the reviewer is advisory and never overrides the deterministic hook decision. Useful as the plain-language statement of the postures the structured rules enforce."
+    }
+  ]
+}
