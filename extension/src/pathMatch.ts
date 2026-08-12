@@ -23,18 +23,12 @@ export function normalizeKey(p: string): string {
 }
 
 /**
- * True if `query` and `storedKey` denote the same file.
- *
- * Exact equality first. When that misses, compare path suffixes so a key stored
- * with extra leading segments still resolves to the file the user is looking at
- * — decorations were dropping on nested-folder workspaces where the editor hands
- * us a longer path than the one recorded in the artifact.
+ * True if `query` and `storedKey` denote the same file. Exact equality: both
+ * sides must already be repo-relative keys. Pass host paths through
+ * `relativeWorkspacePath` first — that is where containment is proven.
  */
 export function pathsMatch(query: string, storedKey: string): boolean {
-  const q = normalizeKey(query);
-  const stored = normalizeKey(storedKey);
-  if (q === stored) return true;
-  return q.endsWith(`/${stored}`) || stored.endsWith(`/${q}`);
+  return normalizeKey(query) === normalizeKey(storedKey);
 }
 
 /** True if `key` is a safe repo-relative path: no traversal, no absolute paths. */
