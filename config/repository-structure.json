@@ -13,10 +13,12 @@
     "biome.json",
     ".gitignore",
     ".mcp.json",
-    ".nvmrc"
+    ".nvmrc",
+    ".sourcery.yaml"
   ],
   "allowedRootDirectories": [
     ".agents",
+    ".greptile",
     ".codex",
     ".codex-plugin",
     ".github",
