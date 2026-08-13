@@ -222,3 +222,85 @@ collateral damage to be designed around. The gate was not weakened to preserve i
 The two unrequired CI contexts (`parity-receipt-reproduction`,
 `standard-candidate-consumption`) remain a separate question, recorded in
 [`merge-policy.md`](merge-policy.md) §2 and deliberately untouched.
+
+## Withdrawal — ratified and applied 2026-08-13
+
+The requirement ratified above survived one day. It is withdrawn here, in the same
+record that promoted it, so the promotion and the demotion are read together.
+
+**What failed:** criterion 5 of the seven — *a further push retriggers review
+against the new head*. Greptile continued to post reviews and stopped emitting the
+`Greptile Review` check run. Branch protection matches on the check run, so the
+required context could not be satisfied by any action available to a contributor,
+and `main` became unmergeable for every change including hotfixes.
+
+Observed on PR #14 across four heads:
+
+| Head | Greptile review posted | `Greptile Review` check run | Other checks | Unresolved threads |
+| --- | --- | --- | --- | --- |
+| `0ee76bc` | yes (COMMENTED) | **0** | 8/8 pass | 0 |
+| `c3c17a2` (rebase onto `main`) | yes (COMMENTED) | **0** | 8/8 pass | 0 |
+| `3aa4531` (fresh push) | yes (COMMENTED) | **0** | 8/8 pass | 0 |
+| `be2e965` (merged head) | — | **0** | 8/8 pass | 0 |
+
+The same `statusCheck: true` in `.greptile/config.json` kept producing the check on
+`workspacejson/standard` across PRs #34, #35 and #36 throughout the same window. The
+configuration is not missing; emission on this repository is not dependable.
+
+**What this says about the calibration.** The seven criteria were the right bar and
+were honestly observed — the defect was caught, the revert was clean, the check was
+head-associated. What the protocol did not test is *durability*: every criterion was
+measured once, in a single sitting, and criterion 5 was verified by one push rather
+than by pushes separated in time. A behavioral bar measured once is a measurement,
+not a guarantee. Any future promotion should require the signal to survive a stated
+interval before it becomes merge-authoritative.
+
+### Branch protection, before and after
+
+Both readings taken from the protection API, not from a write response.
+
+| Setting | Before (2026-08-13T03:53Z) | After |
+| --- | --- | --- |
+| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, `standard-candidate-consumption`, `SonarCloud Code Analysis`, **`Greptile Review`** | `build-and-smoke (20)`, `build-and-smoke (22)`, `standard-candidate-consumption`, `SonarCloud Code Analysis` |
+| `strict` | `true` | `true` — preserved |
+| `required_conversation_resolution` | `true` | `true` — preserved |
+| `required_approving_review_count` | `0` | `0` — preserved |
+| `dismiss_stale_reviews` | `true` | `true` — preserved |
+| `enforce_admins` | `false` | `false` — preserved |
+| `allow_force_pushes` / `allow_deletions` | `false` / `false` | unchanged |
+| Rulesets | `[]` | `[]` |
+
+App id bindings were preserved on the four surviving contexts, so a same-named check
+from another app still cannot satisfy them.
+
+**Greptile was not uninstalled.** `greptile-apps` (app id `867647`) remains installed
+on the org and continues to review. Only its authority over merge eligibility was
+withdrawn.
+
+### How PR #14 actually merged
+
+It did not merge by satisfying protection. On `be2e965` four of the five required
+contexts were green and `Greptile Review` was absent; the merge at
+2026-08-13T02:08:20Z used the administrator bypass that `enforce_admins: false`
+permits. That is recorded rather than smoothed over: it means the GTM-39 merge
+receipt rests on four contexts and conversation resolution, not five, and it is the
+reason this withdrawal was necessary rather than optional — a gate satisfiable only
+by bypass is not a gate.
+
+### Deliberately accepted cost
+
+`main` now has no mechanically enforced reviewer context at all. Nothing asserts
+that the head being merged was reviewed by anything; `required_conversation_resolution`
+and the written per-finding protocol in [`merge-policy.md`](merge-policy.md) §3 carry
+the whole semantic gate. This is a real reduction in enforcement and is accepted
+knowingly, because the alternative on offer was not a stronger gate but an
+unsatisfiable one — which delivered no review authority either, while also blocking
+every merge.
+
+### Re-admission
+
+`Greptile Review` may become merge-authoritative again only after **both** are
+observed: a substantive review on the current PR head, **and** a mechanically
+enforceable current-head signal compatible with branch protection. Absence of either
+is reported as absence. Quota, credit-limit and error comments are not review
+evidence and do not count toward the first.
