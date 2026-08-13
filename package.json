@@ -37,8 +37,8 @@
   "files": [
     "dist",
     "hooks",
-    "scripts/install.mjs",
     ".codex-plugin",
+    ".mcp.json",
     "vsix",
     "README.md",
     "LICENSE"
