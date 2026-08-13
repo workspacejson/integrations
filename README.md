@@ -10,7 +10,7 @@
 
 <br />
 
-<p align="center"><strong>Repository evidence that helps Codex plan around recorded risky changes.</strong></p>
+<p align="center"><strong>The Codex adapter for workspace.json — repository evidence that helps Codex plan around recorded risky changes.</strong></p>
 
 <p align="center"><code>@workspacejson/codex-mcp</code></p>
 
@@ -21,6 +21,20 @@
 </p>
 
 ---
+
+## Where this fits
+
+`workspace.json` is a host-neutral open standard. The artifact is a committed file at `.agents/workspace.json`, and nothing in the format is specific to any editor, agent or vendor — any consumer can read it.
+
+This repository holds **host adapters** for that standard. Codex is the adapter that exists today: the MCP server, the deterministic pre-edit hook, and an optional VS Code surface, published together as `@workspacejson/codex-mcp`. Further adapters can be added alongside it without the format changing, because the format does not know about any of them.
+
+| Layer | Owned by |
+| --- | --- |
+| Format, schema, validation semantics | [`workspacejson/standard`](https://github.com/workspacejson/standard) |
+| Artifact generation | [`workspacejson/cli`](https://github.com/workspacejson/cli) |
+| Host adapters — this repository | [`workspacejson/integrations`](https://github.com/workspacejson/integrations) |
+
+Everything below describes the Codex adapter specifically. Reading it as *the* way to consume `workspace.json` would invert the topology: the committed artifact is the interoperability point, and an integration does not become the standard.
 
 ## See it in 30 seconds
 
@@ -130,7 +144,7 @@ No configuration beyond step 1 above. On your own repo, the same deny path activ
 
 ### Provider-demo proof path — Billfold's one recorded partner
 
-The judge-facing demo runs against [`workspace-json/billfold`](https://github.com/workspace-json/billfold), a small public payments service. This is a separate proof path from this repository's local `fixture/`: Billfold uses the single recorded pairing shown on camera, `src/routes/checkout.ts` and `src/webhooks/stripe.ts`; the local walkthrough above uses `src/auth/session.ts` and `src/lib/format.ts`.
+The judge-facing demo runs against [`workspace-json/billfold`](https://github.com/workspace-json/billfold), a small public payments service. It is still hosted under the superseded `workspace-json` org, which is why its URL differs from the canonical namespace; the link is current and correct. This is a separate proof path from this repository's local `fixture/`: Billfold uses the single recorded pairing shown on camera, `src/routes/checkout.ts` and `src/webhooks/stripe.ts`; the local walkthrough above uses `src/auth/session.ts` and `src/lib/format.ts`.
 
 ```bash
 git clone https://github.com/workspace-json/billfold.git
