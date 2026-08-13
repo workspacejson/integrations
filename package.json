@@ -34,7 +34,15 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "hooks", "scripts/install.mjs", ".codex-plugin", ".mcp.json", "vsix", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "hooks",
+    "scripts/install.mjs",
+    ".codex-plugin",
+    "vsix",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "build:extension": "rm -rf extension/node_modules extension/*.vsix vsix/*.vsix && npm --prefix extension ci && npm --prefix extension run package && mkdir -p vsix && cp extension/workspacejson-codex-decorations-*.vsix vsix/",
