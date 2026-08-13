@@ -203,8 +203,9 @@ export function checkToolsList(listResult, expected = EXPECTED_TOOLS) {
       return fail(`tools/list contains an entry without a string name: ${JSON.stringify(tool)}`);
     }
   }
-  const actual = listResult.tools.map((t) => t.name).sort();
-  const want = [...expected].sort();
+  const byName = (a, b) => a.localeCompare(b);
+  const actual = listResult.tools.map((t) => t.name).sort(byName);
+  const want = [...expected].sort(byName);
   if (JSON.stringify(actual) !== JSON.stringify(want)) {
     return fail(`expected [${want.join(", ")}], got [${actual.join(", ")}]`);
   }
@@ -277,7 +278,10 @@ function crashedInsteadOfRunning(result) {
   if (/ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION|Cannot find module/.test(output)) {
     return "node could not load the hook script (module not found)";
   }
-  if (/^\s*at .*node:internal/m.test(output) && /Error\b/.test(output)) {
+  // Horizontal whitespace only: under /m, `\s*` also matches newlines, so the
+  // indent could be consumed across line boundaries — ambiguity that both
+  // backtracks super-linearly and lets a non-indented "at" line match.
+  if (/^[ \t]*at .*node:internal/m.test(output) && /Error\b/.test(output)) {
     return "node exited on an unhandled error before the hook reached a decision";
   }
   return null;

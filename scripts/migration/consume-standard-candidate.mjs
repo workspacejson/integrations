@@ -102,9 +102,23 @@ function runOrDie(cmd, args, opts = {}) {
   return result;
 }
 
+/**
+ * Absolute path to `git`, resolved from fixed system locations.
+ *
+ * The fingerprint below is the evidence that this harness did not mutate the
+ * source checkout. Resolving `git` through `PATH` would let a writable PATH
+ * entry decide what `git status` reports — the one thing that must not be
+ * forgeable is the tool asked to prove nothing changed. Fixed locations only.
+ *
+ * If none exists the fingerprint is unavailable, and `checkTreeUnchanged`
+ * fails on a non-string input rather than skipping to green.
+ */
+const GIT_BIN = ["/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git"].find((p) => existsSync(p)) ?? null;
+
 /** Fingerprint of the source checkout, used to prove the harness changed nothing. */
 function treeFingerprint() {
-  const result = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8", cwd: repoRoot, timeout: 30000 });
+  if (!GIT_BIN) return null;
+  const result = spawnSync(GIT_BIN, ["status", "--porcelain"], { encoding: "utf8", cwd: repoRoot, timeout: 30000 });
   if (result.error || result.status !== 0) return null;
   return result.stdout;
 }
@@ -199,7 +213,7 @@ async function main() {
     const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
 
     const transport = new StdioClientTransport({
-      command: "node",
+      command: process.execPath,
       args: [installedMain],
       env: { ...process.env, WORKSPACE_JSON_ROOT: fixtureDest },
     });
@@ -240,7 +254,7 @@ async function main() {
     const hookPath = join(installedPkg, "hooks", "pre-edit-check.mjs");
     record("hook.exists", checkPathExists(existsSync(hookPath), hookPath));
 
-    const hookResult = run("node", [hookPath, "--paths", "src/routes/checkout.ts"], { cwd: fixtureDest });
+    const hookResult = run(process.execPath, [hookPath, "--paths", "src/routes/checkout.ts"], { cwd: fixtureDest });
     record("hook.denies", checkHookDenies(hookResult));
     record("hook.output-mentions-deny", checkHookOutputMentionsDeny(hookResult));
 
@@ -253,7 +267,7 @@ async function main() {
     // ever regresses into an install again, it installs into a directory we
     // then inspect — and installer.help-nondestructive goes red — instead of
     // silently rewriting this checkout's .codex/config.toml.
-    const installHelp = run("node", [installScript, "--help"], { cwd: helpSandbox });
+    const installHelp = run(process.execPath, [installScript, "--help"], { cwd: helpSandbox });
     record("installer.help-usage", checkInstallerHelp(installHelp));
     record("installer.help-nondestructive", checkHelpWroteNothing(readdirSync(helpSandbox)));
   } catch (err) {

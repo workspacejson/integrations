@@ -137,6 +137,42 @@ describe("compareReceipts", () => {
     expect(() => compareReceipts(structuredClone(BASE_RECEIPT), bad)).toThrow(/candidate receipt is not a usable/);
     expect(() => compareReceipts(bad, structuredClone(BASE_RECEIPT))).toThrow(/reference receipt is not a usable/);
   });
+
+  // The comparator keys `checks` by id into a Map, which keeps only the last
+  // entry for a repeated id. Without this guard a receipt carrying the same
+  // check twice with divergent statuses loses the earlier one and compares
+  // clean against the survivor — inconsistency reported as parity.
+  it("refuses a receipt carrying the same check id twice", () => {
+    const duplicated: Receipt = structuredClone(BASE_RECEIPT);
+    duplicated.checks.push({ ...duplicated.checks[0], status: "fail", violations: ["tree differs"] });
+
+    expect(() => compareReceipts(duplicated, structuredClone(BASE_RECEIPT))).toThrow(
+      /'checks' contains duplicate ids: git\.tree-equality/,
+    );
+    expect(() => compareReceipts(structuredClone(BASE_RECEIPT), duplicated)).toThrow(
+      /candidate receipt is not a usable/,
+    );
+  });
+
+  // Guards the collapse directly: absent the duplicate check, the losing entry
+  // is discarded and this pair compares clean despite disagreeing.
+  it("does not let a duplicate id mask a status divergence", () => {
+    const reference: Receipt = structuredClone(BASE_RECEIPT);
+    const candidate: Receipt = structuredClone(BASE_RECEIPT);
+    candidate.checks[0].status = "fail";
+    candidate.checks.push({ ...BASE_RECEIPT.checks[0] });
+
+    expect(() => compareReceipts(reference, candidate)).toThrow(/duplicate ids/);
+  });
+
+  it("names every duplicated id, not just the first", () => {
+    const duplicated: Receipt = structuredClone(BASE_RECEIPT);
+    duplicated.checks.push({ ...BASE_RECEIPT.checks[1] }, { ...BASE_RECEIPT.checks[0] });
+
+    expect(() => compareReceipts(duplicated, structuredClone(BASE_RECEIPT))).toThrow(
+      /duplicate ids: git\.tree-equality, pkg\.pack-inventory/,
+    );
+  });
 });
 
 describe("readReceipt", () => {

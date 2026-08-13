@@ -65,6 +65,14 @@ export function readReceipt(path, label = "receipt") {
  * `TypeError` from inside the comparison, and a well-formed receipt with an
  * empty check set compares clean against another empty one — a vacuous pass
  * on the gate's own input.
+ *
+ * Duplicate ids are rejected for the same reason. The comparator projects
+ * `checks` into a `Map` keyed by id, which keeps only the last entry for a
+ * repeated id and silently discards the earlier one. A receipt carrying the
+ * same check twice with divergent statuses would then compare clean against
+ * the survivor — an internally inconsistent receipt reported as matching.
+ * `createRecorder` in ./consumption-checks.mjs already refuses to *emit* such
+ * a receipt; this refuses to *read* one, so neither end of the gate trusts it.
  */
 function assertReceiptShape(receipt, label) {
   const problems = [];
@@ -74,6 +82,17 @@ function assertReceiptShape(receipt, label) {
   else if (receipt.checks.length === 0) problems.push("'checks' is empty — nothing to compare");
   else if (receipt.checks.some((c) => !c || typeof c.id !== "string")) {
     problems.push("'checks' contains an entry without a string 'id'");
+  } else {
+    const seen = new Set();
+    const duplicated = new Set();
+    for (const { id } of receipt.checks) {
+      if (seen.has(id)) duplicated.add(id);
+      seen.add(id);
+    }
+    if (duplicated.size > 0) {
+      const ids = [...duplicated].sort((a, b) => a.localeCompare(b)).join(", ");
+      problems.push(`'checks' contains duplicate ids: ${ids}`);
+    }
   }
 
   if (problems.length > 0) {
