@@ -47,9 +47,16 @@ Nothing in this document elevates Sourcery on the basis of its check state.
 
 Values below were read from the GitHub branch-protection API for `main`.
 
+> **Division of responsibility.** This document is the *current contract*: what is
+> required now and how to read it. [`calibration-2026-08.md`](calibration-2026-08.md)
+> is the *evidence and change record*: the before/after protection state, the
+> calibration that justified the change, and the SHAs it was measured on. When a
+> setting changes, the new state is recorded here and the transition is recorded
+> there — so the two are not two copies of the same claim.
+
 | Setting | Measured value |
 | --- | --- |
-| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)` |
+| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, **`Greptile Review`** |
 | `strict` (branch must be up to date) | `true` |
 | `required_conversation_resolution` | `true` |
 | `required_approving_review_count` | `0` |
@@ -58,9 +65,26 @@ Values below were read from the GitHub branch-protection API for `main`.
 | `allow_force_pushes` / `allow_deletions` | `false` / `false` |
 | Repository rulesets | none (`[]`) |
 
-So today, a merge into `main` requires: the two `build-and-smoke` contexts green on
-an up-to-date head, and **every conversation resolved**. No review approval is
-required, and no reviewer app is required.
+So a merge into `main` requires: the two `build-and-smoke` contexts and
+`Greptile Review` green on an up-to-date head, and **every conversation resolved**.
+No review approval is required.
+
+`Greptile Review` was added to the required contexts on 2026-08-12 after the
+calibration in [`calibration-2026-08.md`](calibration-2026-08.md), and is pinned to
+app id `867647` — only that app can satisfy the context, so a same-named check from
+elsewhere cannot. `Sourcery review` is deliberately **not** required.
+
+**Read the requirement precisely.** The Greptile context asserts *the current head
+was reviewed*, not *the review found nothing* — the check concludes `success` even
+on a head carrying a P1 finding. The semantic half of the gate is
+`required_conversation_resolution` plus the written per-finding protocol in §3. The
+two are only meaningful together, and neither is a substitute for reading the
+findings.
+
+This was observed working end to end on PR #12 at head `76d495d`: all three required
+contexts `success`, `SonarCloud Code Analysis` **failing but not required and
+therefore not blocking**, and `mergeStateStatus=BLOCKED` on a single unresolved
+Greptile P1 thread.
 
 ### Observed gap — recorded, not acted on here
 
@@ -94,7 +118,11 @@ is stale — treat that as a documentation defect, and correct it in the PR that
 noticed. A merge-eligibility claim that has drifted from the setting it describes
 is worse than no claim, because it will be believed.
 
-Measured on 2026-08-12 against `main` at `a31242b`.
+Measured on 2026-08-12 against `main` at `f61e0cb`, immediately after
+`Greptile Review` was added to the required contexts. The earlier reading in
+[`calibration-2026-08.md`](calibration-2026-08.md) — `main` at `a31242b`, two
+required contexts — is the pre-policy baseline and is kept there as the *before*
+half of the record, not as a description of current state.
 
 ## 3. Conversation resolution
 
@@ -113,13 +141,13 @@ The protocol:
 
 ## 4. `Greptile Review` as a required check
 
-**Current state: not required. Measured as eligible — see
-[`calibration-2026-08.md`](calibration-2026-08.md) — with the required-contexts
-change left as an explicit, separately-owned step.**
+**Current state: required, as of 2026-08-12.** It was promoted only after all seven
+criteria below were observed on this repository, and only into the narrow role it
+demonstrably performs — see [`calibration-2026-08.md`](calibration-2026-08.md).
 
-The bar for adding `Greptile Review` to the required-contexts list is behavioral,
-not configurational. Each of the following must be observed on this repository —
-not inherited from `workspacejson/standard`, where the mechanism was proven:
+The bar was behavioral, not configurational. Each of the following was observed on
+this repository — not inherited from `workspacejson/standard`, where the mechanism
+was proven:
 
 1. Branch-local `.greptile/` configuration is demonstrably read on a PR head.
 2. The review is associated with the **exact current head SHA**, not with the PR in
@@ -148,6 +176,32 @@ and the two are only meaningful together.
 And that gate is itself softer than it appears: GitHub auto-resolves a thread whose
 lines a later commit removed, so resolution can be satisfied without anyone
 answering the finding. Hence §3 — the receipt has to be written into the thread.
+GitHub cannot encode that distinction mechanically, which is why the written
+per-finding disposition, not the `isResolved` bit, is the evidence.
+
+### Observed working
+
+First post-policy proof, PR #12 (META-285) at head `76d495d`, base `f61e0cb`:
+
+| Signal | Observed |
+| --- | --- |
+| `build-and-smoke (20)` / `(22)` | success / success |
+| `Greptile Review` | success — `5 files reviewed, 0 comments added` on this head |
+| `SonarCloud Code Analysis` | **failure — not a required context, did not block** |
+| `Sourcery review` | success (not required) |
+| Unresolved threads | 1 — a Greptile P1 on `scripts/migration/verify-receipt.mjs` |
+| `mergeStateStatus` | **`BLOCKED`** |
+
+Every required status context was satisfied and the PR was still blocked, on the
+conversation-resolution half alone. That is the two-part contract working: status
+proved the current head was reviewed, resolution kept an open actionable finding
+from being merged past.
+
+The same update also demonstrated the intended cost of a stricter contract: PR #12
+and PR #6 both went `BEHIND` when `main` moved, and each must take a current-policy
+review before merging. PR #6's pre-policy head has **no** Greptile run at all, so it
+cannot satisfy the context until it updates — intended behavior, not collateral
+damage.
 
 ## 5. What a check state does and does not mean
 
