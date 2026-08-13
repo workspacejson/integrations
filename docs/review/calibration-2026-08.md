@@ -244,8 +244,28 @@ Observed on PR #14 across four heads:
 | `be2e965` (merged head) | — | **0** | 8/8 pass | 0 |
 
 The same `statusCheck: true` in `.greptile/config.json` kept producing the check on
-`workspacejson/standard` across PRs #34, #35 and #36 throughout the same window. The
-configuration is not missing; emission on this repository is not dependable.
+`workspacejson/standard` across PRs #34, #35 and #36 throughout the same window, so
+the configuration was never the problem.
+
+**Root cause, established 2026-08-13 — this is not repository-specific.** The
+Greptile trial account reached its credit limit. In place of a review it posts:
+
+> `qmarcelle` has reached the 50-credit limit for trial accounts. To continue
+> receiving code reviews, [upgrade your plan](https://app.greptile.com/review/github).
+
+and emits **no check run**. That is why the check fired on `integrations` #10 and
+#13 and then stopped: the credits ran out between them and #14, not the app's
+emission becoming unreliable on this repository.
+
+The prediction that follows was confirmed the same day. `workspacejson/standard`
+kept working only until its own next pull request — on #37 Greptile reviewed the
+exact head `4f9e8f6f` and emitted **zero** check runs, where #34, #35 and #36 each
+produced exactly one. `standard` hit the identical deadlock and its requirement was
+withdrawn the same way; see that repository's `docs/repository-settings.md`.
+
+An earlier revision of this section read "emission on this repository is not
+dependable." That was accurate about the symptom and wrong about the cause, and the
+difference matters: a flaky app is waited out, an exhausted trial is topped up.
 
 **What this says about the calibration.** The seven criteria were the right bar and
 were honestly observed — the defect was caught, the revert was clean, the check was

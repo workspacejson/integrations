@@ -251,8 +251,17 @@ requirement could not survive.
 
 The same `statusCheck: true` in `.greptile/config.json` continued to produce the
 check on `workspacejson/standard` throughout, so this was not a missing config
-value. The mechanism is real; its emission on this repository is not currently
-dependable.
+value.
+
+**The cause is the Greptile trial credit limit, not this repository.** Established
+2026-08-13: the account has reached its 50-credit trial limit, after which Greptile
+posts a credit-limit notice in place of a review and emits no check run.
+`workspacejson/standard` kept working only until its own next pull request — #37
+reviewed head `4f9e8f6f` and emitted zero check runs, against exactly one each on
+#34, #35 and #36 — and its requirement was withdrawn the same way. Details in
+[`calibration-2026-08.md`](calibration-2026-08.md).
+
+Restoring the signal is therefore a billing action, not a debugging one.
 
 **Change applied 2026-08-13**, measured before and after against the API:
 
