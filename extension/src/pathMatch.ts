@@ -1,10 +1,18 @@
-import { isAbsolute, normalize, relative } from "node:path";
+import { normalize, relative } from "node:path";
 
 /**
  * Mirrors src/path-match.ts (META-102 contract) in the main repo. Ported, not
  * imported — this extension is a standalone npm package with no build-time
  * dependency on the server. This is the ONLY path matcher used anywhere in
  * this extension; keep it in sync by hand if the upstream contract changes.
+ *
+ * Same contract as the server, expressed in two steps rather than one: here
+ * `relativeWorkspacePath` IS the proven-containment step, and every caller runs
+ * it against the VS Code workspace folder before anything reaches `pathsMatch`.
+ * So `pathsMatch` only ever sees repo-relative keys and is exact equality —
+ * the server's `pathsMatch(query, storedKey, root)` folds the same two steps
+ * into one signature because its callers receive raw host paths. Neither has a
+ * suffix fallback (ADR-006 §8, META-291).
  */
 
 export function normalizeKey(p: string): string {
@@ -14,16 +22,13 @@ export function normalizeKey(p: string): string {
   return s;
 }
 
-/** True if `query` and `storedKey` denote the same file. */
+/**
+ * True if `query` and `storedKey` denote the same file. Exact equality: both
+ * sides must already be repo-relative keys. Pass host paths through
+ * `relativeWorkspacePath` first — that is where containment is proven.
+ */
 export function pathsMatch(query: string, storedKey: string): boolean {
-  const q = normalizeKey(query);
-  const s = normalizeKey(storedKey);
-  if (q === s) return true;
-  // Fallback, ONLY for an absolute query resolving to a repo-relative stored key.
-  // Guarded so a bare single-segment stored key can never match an arbitrary
-  // absolute path — the fallback requires the stored key to be multi-segment.
-  if (isAbsolute(query) && s.includes("/") && q.endsWith(`/${s}`)) return true;
-  return false;
+  return normalizeKey(query) === normalizeKey(storedKey);
 }
 
 /** True if `key` is a safe repo-relative path: no traversal, no absolute paths. */

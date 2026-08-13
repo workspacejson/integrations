@@ -148,10 +148,14 @@ export function decideEnforcement(input: {
   evidence: EvidenceRecord[];
   coChangePartners: string[];
   changesetPaths: string[];
+  /** Repository root the changeset paths are proven against (see NormalizedWorkspace). */
+  repositoryRoot: string;
 }): FileRiskAssessment {
-  // Same matcher as the read layer: exact-first, absolute-suffix fallback only.
-  // (audit Critical #1 — this was a divergent fuzzy match that downgraded denies)
-  const inChangeset = (partner: string) => input.changesetPaths.some((c) => pathsMatch(c, partner));
+  // Same matcher as the read layer: exact equality after resolution, no suffix
+  // fallback. (audit Critical #1 — this was a divergent fuzzy match that
+  // downgraded denies; the two layers must never drift apart again.)
+  const inChangeset = (partner: string) =>
+    input.changesetPaths.some((c) => pathsMatch(c, partner, input.repositoryRoot));
   const missingPartners = input.coChangePartners.filter((p) => !inChangeset(p));
 
   const cite = input.evidence.length > 0 ? ` Evidence: ${input.evidence.map((e) => e.claim).join("; ")}.` : "";

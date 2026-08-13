@@ -9,6 +9,7 @@ import {
   findFragile,
   isIndexed,
   normalizeWorkspace,
+  repositoryRootFor,
   resolveWorkspacePath,
 } from "../../src/services/workspace.js";
 
@@ -211,6 +212,35 @@ describe("normalizeWorkspace", () => {
   });
 });
 
+describe("repositoryRootFor", () => {
+  // The defect this exists to prevent: dirname() of the CANONICAL artifact
+  // location yields `<root>/.agents`, one level short. Stored keys are
+  // repo-root-relative, so a short root makes every legitimate absolute host
+  // query fail containment.
+  it("resolves the canonical .agents layout to the repository root, not .agents", () => {
+    expect(repositoryRootFor("/repo/.agents/workspace.json")).toBe("/repo");
+    expect(repositoryRootFor("/repo/.agents/workspace.json")).not.toBe("/repo/.agents");
+  });
+
+  it("resolves the legacy flat layouts to the containing directory", () => {
+    expect(repositoryRootFor("/repo/workspace.json")).toBe("/repo");
+    expect(repositoryRootFor("/repo/.workspace.json")).toBe("/repo");
+  });
+
+  it("falls back to the containing directory for an unrecognized location", () => {
+    expect(repositoryRootFor("/somewhere/custom-name.json")).toBe("/somewhere");
+  });
+
+  it("does not mistake a directory merely named .agents for the artifact layout", () => {
+    expect(repositoryRootFor("/repo/.agents/nested/workspace.json")).toBe("/repo/.agents/nested");
+  });
+
+  it("is what the normalized workspace carries", () => {
+    const ws = normalizeWorkspace("/repo/.agents/workspace.json", { root: {} });
+    expect(ws.repositoryRoot).toBe("/repo");
+  });
+});
+
 describe("findFragile", () => {
   const ws = normalizeWorkspace(sourcePath, fixture);
 
@@ -218,9 +248,17 @@ describe("findFragile", () => {
     expect(findFragile(ws, "src/routes/checkout.ts")).toBeDefined();
   });
 
-  it("normalizes ./ and absolute paths before matching", () => {
+  it("normalizes ./ and resolves absolute paths inside the repository root", () => {
     expect(findFragile(ws, "./src/routes/checkout.ts")).toBeDefined();
-    expect(findFragile(ws, "/abs/repo/src/routes/checkout.ts")).toBeDefined();
+    expect(findFragile(ws, resolve(ws.repositoryRoot, "src/routes/checkout.ts"))).toBeDefined();
+  });
+
+  // ADR-006 §8 / META-291: the absolute path is resolved against the PROVEN root
+  // and compared exactly. A path in a different checkout that merely ends with
+  // the stored key used to match via the suffix fallback.
+  it("does not match an absolute path outside the repository root", () => {
+    expect(findFragile(ws, "/abs/repo/src/routes/checkout.ts")).toBeUndefined();
+    expect(findFragile(ws, "/tmp/someone-elses-checkout/src/routes/checkout.ts")).toBeUndefined();
   });
 
   it("does not do partial matching", () => {
