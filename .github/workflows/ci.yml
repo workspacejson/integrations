@@ -86,6 +86,11 @@ jobs:
       # required: the cheapest way to satisfy a failing parity gate would be to
       # delete the receipt. Absence is now a failure.
       - name: Require a committed parity receipt
+        # Explicit, because the script below depends on `set -euo pipefail`.
+        # Runners default to bash today, but that is an implementation detail,
+        # and a gate whose failure mode is "silently did not fail" should not
+        # rest on one.
+        shell: bash
         run: |
           set -euo pipefail
           if [ ! -f docs/migration/parity-receipt.json ]; then
