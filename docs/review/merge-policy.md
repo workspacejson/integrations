@@ -56,7 +56,7 @@ Values below were read from the GitHub branch-protection API for `main`.
 
 | Setting | Measured value |
 | --- | --- |
-| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, **`Greptile Review`** |
+| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, **`Greptile Review`**, `standard-candidate-consumption`, `SonarCloud Code Analysis` |
 | `strict` (branch must be up to date) | `true` |
 | `required_conversation_resolution` | `true` |
 | `required_approving_review_count` | `0` |
@@ -65,9 +65,10 @@ Values below were read from the GitHub branch-protection API for `main`.
 | `allow_force_pushes` / `allow_deletions` | `false` / `false` |
 | Repository rulesets | none (`[]`) |
 
-So a merge into `main` requires: the two `build-and-smoke` contexts and
-`Greptile Review` green on an up-to-date head, and **every conversation resolved**.
-No review approval is required.
+So a merge into `main` requires: the two `build-and-smoke` contexts,
+`Greptile Review`, `standard-candidate-consumption`, and `SonarCloud Code Analysis`
+green on an up-to-date head, and **every conversation resolved**. No review approval
+is required.
 
 `Greptile Review` was added to the required contexts on 2026-08-12 after the
 calibration in [`calibration-2026-08.md`](calibration-2026-08.md), and is pinned to
@@ -81,26 +82,32 @@ on a head carrying a P1 finding. The semantic half of the gate is
 two are only meaningful together, and neither is a substitute for reading the
 findings.
 
-This was observed working end to end on PR #12 at head `76d495d`: all three required
-contexts `success`, `SonarCloud Code Analysis` **failing but not required and
-therefore not blocking**, and `mergeStateStatus=BLOCKED` on a single unresolved
-Greptile P1 thread.
+This was observed working end to end on PR #12 at head `76d495d`, **under the
+three-context protection in force on 2026-08-12**: all three required contexts
+`success`, `SonarCloud Code Analysis` failing but not required and therefore not
+blocking, and `mergeStateStatus=BLOCKED` on a single unresolved Greptile P1 thread.
 
-### Observed gap — recorded, not acted on here
+That observation is kept as the record of the mechanism, not as a description of
+current state: `SonarCloud Code Analysis` has since been promoted, and the same
+failure on the same PR blocks today. What the observation still shows — that status
+and conversation resolution are separate halves of the gate — is unaffected.
 
-CI produces four check runs, but only two are required:
+### Observed gap — narrowed since first recorded
+
+CI produces four check runs. Three are required:
 
 | Check run | Required? |
 | --- | --- |
 | `build-and-smoke (20)` | yes |
 | `build-and-smoke (22)` | yes |
-| `parity-receipt-reproduction` | **no** |
-| `standard-candidate-consumption` | **no** |
+| `standard-candidate-consumption` | yes — promoted since first recorded |
+| `parity-receipt-reproduction` | **no** — promotion is META-337 |
 
-A failure in either unrequired job does not block a merge today. That is a separate
-governance decision from the reviewer question this document's owner issue covers,
-and it is recorded here so it is not mistaken for a setting someone already chose
-deliberately. Changing it is out of scope for META-322.
+`parity-receipt-reproduction` is the one CI job whose failure still does not block a
+merge. Promoting it is META-337's subject, and this PR is its prerequisite: the job
+could conclude `success` without reproducing anything, so requiring it first would
+have made a false green merge-authorizing. Absence is now a failure, which is what
+makes the promotion safe to make.
 
 ### Refreshing this section
 
@@ -118,11 +125,21 @@ is stale — treat that as a documentation defect, and correct it in the PR that
 noticed. A merge-eligibility claim that has drifted from the setting it describes
 is worse than no claim, because it will be believed.
 
-Measured on 2026-08-12 against `main` at `f61e0cb`, immediately after
-`Greptile Review` was added to the required contexts. The earlier reading in
-[`calibration-2026-08.md`](calibration-2026-08.md) — `main` at `a31242b`, two
-required contexts — is the pre-policy baseline and is kept there as the *before*
-half of the record, not as a description of current state.
+Measured on 2026-08-13 against `main` at `70cfd57`. The two preceding readings are
+kept as the *before* halves of the record, not as descriptions of current state:
+`main` at `f61e0cb` on 2026-08-12 (three required contexts, immediately after
+`Greptile Review` was promoted), and `main` at `a31242b` in
+[`calibration-2026-08.md`](calibration-2026-08.md) (two required contexts,
+pre-policy baseline).
+
+The 2026-08-13 reading was taken because this section had already drifted: it
+claimed three required contexts while the API returned five —
+`standard-candidate-consumption` and `SonarCloud Code Analysis` had been promoted
+without the change reaching this file. Corrected here under the rule directly above,
+which is the first time that rule has been exercised. The drift is itself the
+argument for the rule: the stale table said `SonarCloud Code Analysis` was
+non-blocking, and a reader trusting it would have concluded PR #12 was mergeable
+while it was in fact blocked on exactly that context.
 
 ## 3. Conversation resolution
 
@@ -187,7 +204,7 @@ First post-policy proof, PR #12 (META-285) at head `76d495d`, base `f61e0cb`:
 | --- | --- |
 | `build-and-smoke (20)` / `(22)` | success / success |
 | `Greptile Review` | success — `5 files reviewed, 0 comments added` on this head |
-| `SonarCloud Code Analysis` | **failure — not a required context, did not block** |
+| `SonarCloud Code Analysis` | **failure — not a required context *at that time*, did not block. It is required as of the 2026-08-13 reading in §2, and the same failure blocks today** |
 | `Sourcery review` | success (not required) |
 | Unresolved threads | 1 — a Greptile P1 on `scripts/migration/verify-receipt.mjs` |
 | `mergeStateStatus` | **`BLOCKED`** |

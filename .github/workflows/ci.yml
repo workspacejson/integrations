@@ -77,24 +77,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check for committed parity receipt
-        id: check-receipt
+      # The receipt must be present, not merely checked for.
+      #
+      # This step previously set `has_receipt=false` and let the two steps below
+      # skip, so a branch with no committed receipt produced a **green** job that
+      # had reproduced nothing. That is survivable while the job is advisory, but
+      # it becomes a merge-authorizing false green the moment the check is
+      # required: the cheapest way to satisfy a failing parity gate would be to
+      # delete the receipt. Absence is now a failure.
+      - name: Require a committed parity receipt
+        # Explicit, because the script below depends on `set -euo pipefail`.
+        # Runners default to bash today, but that is an implementation detail,
+        # and a gate whose failure mode is "silently did not fail" should not
+        # rest on one.
+        shell: bash
         run: |
-          if [ -f docs/migration/parity-receipt.json ]; then
-            echo "has_receipt=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_receipt=false" >> $GITHUB_OUTPUT
-            echo "No committed parity receipt found — skipping reproduction check."
+          set -euo pipefail
+          if [ ! -f docs/migration/parity-receipt.json ]; then
+            echo "::error file=docs/migration/parity-receipt.json::Missing committed parity receipt"
+            {
+              echo "## parity-receipt-reproduction failed"
+              echo
+              echo "**Invariant.** The committed parity receipt at"
+              echo "\`docs/migration/parity-receipt.json\` is reproducible from the source"
+              echo "it names."
+              echo
+              echo "**Why it matters.** This job exists to prove the committed receipt is"
+              echo "not a stale artifact. With no receipt there is nothing to reproduce, and"
+              echo "a green result would assert a reproduction that never ran. Missing is"
+              echo "not green."
+              echo
+              echo "**Authority.** Repository CI, reported by \`github-actions\` as"
+              echo "\`parity-receipt-reproduction\`."
+              echo
+              echo "**Evidence required.** Either restore the committed receipt, or — if the"
+              echo "migration it records is genuinely retired — remove this job in the same"
+              echo "change that removes the receipt, so the deletion is a reviewable"
+              echo "decision rather than a silent loss of coverage."
+              echo
+              echo "**Do not weaken.** Do not restore the previous skip-if-absent behavior"
+              echo "to recover green."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - name: Reproduce parity receipt
-        if: steps.check-receipt.outputs.has_receipt == 'true'
         run: |
           TARGET_SHA=$(node -p "require('./docs/migration/parity-receipt.json').refs.targetSha")
           node scripts/migration/verify-clone-parity.mjs --target-ref "$TARGET_SHA" --out .parity-ci
 
       - name: Compare CI receipt against committed reference
-        if: steps.check-receipt.outputs.has_receipt == 'true'
         run: |
           node scripts/migration/verify-receipt.mjs \
             docs/migration/parity-receipt.json \
