@@ -56,7 +56,7 @@ Values below were read from the GitHub branch-protection API for `main`.
 
 | Setting | Measured value |
 | --- | --- |
-| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, **`Greptile Review`**, `standard-candidate-consumption`, `SonarCloud Code Analysis` |
+| Required status checks | `build-and-smoke (20)`, `build-and-smoke (22)`, `standard-candidate-consumption`, `SonarCloud Code Analysis` |
 | `strict` (branch must be up to date) | `true` |
 | `required_conversation_resolution` | `true` |
 | `required_approving_review_count` | `0` |
@@ -66,21 +66,21 @@ Values below were read from the GitHub branch-protection API for `main`.
 | Repository rulesets | none (`[]`) |
 
 So a merge into `main` requires: the two `build-and-smoke` contexts,
-`Greptile Review`, `standard-candidate-consumption`, and `SonarCloud Code Analysis`
-green on an up-to-date head, and **every conversation resolved**. No review approval
-is required.
+`standard-candidate-consumption`, and `SonarCloud Code Analysis` green on an
+up-to-date head, and **every conversation resolved**. No review approval is
+required.
 
 `Greptile Review` was added to the required contexts on 2026-08-12 after the
-calibration in [`calibration-2026-08.md`](calibration-2026-08.md), and is pinned to
-app id `867647` — only that app can satisfy the context, so a same-named check from
-elsewhere cannot. `Sourcery review` is deliberately **not** required.
+calibration in [`calibration-2026-08.md`](calibration-2026-08.md), and **removed on
+2026-08-13** because it stopped emitting the check run the requirement depends on —
+see §4. `Sourcery review` is deliberately **not** required.
 
-**Read the requirement precisely.** The Greptile context asserts *the current head
-was reviewed*, not *the review found nothing* — the check concludes `success` even
-on a head carrying a P1 finding. The semantic half of the gate is
-`required_conversation_resolution` plus the written per-finding protocol in §3. The
-two are only meaningful together, and neither is a substitute for reading the
-findings.
+**Read what remains precisely.** With no reviewer context required, the semantic
+half of the gate is carried entirely by `required_conversation_resolution` plus the
+written per-finding protocol in §3. Greptile still posts reviews and its findings
+still create threads that must be reconciled to merge; what it no longer does is
+assert mechanically that the current head was reviewed. That assertion is now a
+human responsibility, and §5 applies with more force, not less.
 
 This was observed working end to end on PR #12 at head `76d495d`, **under the
 three-context protection in force on 2026-08-12**: all three required contexts
@@ -158,9 +158,15 @@ The protocol:
 
 ## 4. `Greptile Review` as a required check
 
-**Current state: required, as of 2026-08-12.** It was promoted only after all seven
-criteria below were observed on this repository, and only into the narrow role it
-demonstrably performs — see [`calibration-2026-08.md`](calibration-2026-08.md).
+**Current state: NOT required, as of 2026-08-13.** It was required from 2026-08-12
+until 2026-08-13, promoted only after all seven criteria below were observed on this
+repository, and only into the narrow role it demonstrably performs — see
+[`calibration-2026-08.md`](calibration-2026-08.md). It was demoted because criterion
+5 stopped holding; the demotion is recorded under
+[Why the requirement was withdrawn](#why-the-requirement-was-withdrawn) below.
+
+Greptile remains installed and continues to post reviews. What was withdrawn is its
+authority over merge eligibility, not its presence.
 
 The bar was behavioral, not configurational. Each of the following was observed on
 this repository — not inherited from `workspacejson/standard`, where the mechanism
@@ -172,7 +178,8 @@ was proven:
 3. A deliberate, Integrations-specific positive-control defect is **caught** by a
    custom rule from `.greptile/config.json`.
 4. The reverted, non-violating head does **not** repeat that finding.
-5. A further push **retriggers** review against the new head.
+5. A further push **retriggers** review against the new head. — **This no longer
+   holds. See [Why the requirement was withdrawn](#why-the-requirement-was-withdrawn).**
 6. Actionable findings are reconcilable individually, with thread receipts intact.
 7. Merge eligibility then behaves as claimed.
 
@@ -219,6 +226,52 @@ and PR #6 both went `BEHIND` when `main` moved, and each must take a current-pol
 review before merging. PR #6's pre-policy head has **no** Greptile run at all, so it
 cannot satisfy the context until it updates — intended behavior, not collateral
 damage.
+
+### Why the requirement was withdrawn
+
+Criterion 5 — *a further push retriggers review against the new head* — held during
+calibration on 2026-08-12 and stopped holding immediately afterwards. Greptile kept
+posting reviews; it stopped emitting the `Greptile Review` check run that branch
+protection matches on. A required context that the installed app does not produce
+cannot be satisfied by anything, so `main` became unmergeable.
+
+Observed on PR #14 across four heads:
+
+| Head | Greptile review posted | `Greptile Review` check run | Other checks |
+| --- | --- | --- | --- |
+| `0ee76bc` | yes (COMMENTED) | **0** | 8/8 pass |
+| `c3c17a2` (rebase onto main) | yes (COMMENTED) | **0** | 8/8 pass |
+| `3aa4531` (fresh push) | yes (COMMENTED) | **0** | 8/8 pass |
+| `be2e965` (merged head) | — | **0** | 8/8 pass |
+
+Zero unresolved threads on every one of them. The documented recovery path — push
+again and get a fresh check — was the thing that failed, which is why criterion 5 is
+annotated above rather than quietly deleted: it is the criterion whose failure the
+requirement could not survive.
+
+The same `statusCheck: true` in `.greptile/config.json` continued to produce the
+check on `workspacejson/standard` throughout, so this was not a missing config
+value. The mechanism is real; its emission on this repository is not currently
+dependable.
+
+**Change applied 2026-08-13**, measured before and after against the API:
+
+```
+before: ["build-and-smoke (20)", "build-and-smoke (22)",
+         "standard-candidate-consumption", "SonarCloud Code Analysis",
+         "Greptile Review"]
+after:  ["build-and-smoke (20)", "build-and-smoke (22)",
+         "standard-candidate-consumption", "SonarCloud Code Analysis"]
+```
+
+Greptile was **not** uninstalled (`greptile-apps`, app id `867647`, still installed
+on the org). Quota, credit-limit and error comments are **not** review evidence, and
+absence of a check is recorded as absence — never as a pass.
+
+**Re-admission.** `Greptile Review` may become merge-authoritative again only after
+**both** are observed: a substantive review on the current PR head, **and** a
+mechanically enforceable current-head signal compatible with branch protection.
+Meeting one without the other is what produced this deadlock.
 
 ## 5. What a check state does and does not mean
 
