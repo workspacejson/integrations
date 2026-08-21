@@ -1,0 +1,93 @@
+{
+  "purpose": "directed probes of the Claude Code MCP recruitment path (META-363 post-hoc)",
+  "host": {
+    "name": "Claude Code",
+    "version": "2.1.238",
+    "model": "claude-sonnet-5"
+  },
+  "prompt": "Call the workspace_review_evidence tool with changedFiles set to [\"packages/spec/src/schema.ts\"] and report only the Freshness line from its output.",
+  "results": [
+    {
+      "probe": "probe-alwaysload-2.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": false,
+      "sequence": [
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-alwaysload-3.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": false,
+      "sequence": [
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-alwaysload.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": false,
+      "sequence": [
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-clean.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": true,
+      "sequence": [
+        "ToolSearch",
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-default-2.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": true,
+      "sequence": [
+        "ToolSearch",
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-default-3.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": true,
+      "sequence": [
+        "ToolSearch",
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-default.jsonl",
+      "tools": 30,
+      "slashCommands": 329,
+      "agents": 29,
+      "toolSearchRequired": true,
+      "sequence": [
+        "ToolSearch",
+        "mcp__workspacejson-review-evidence__workspace_review_evidence"
+      ]
+    },
+    {
+      "probe": "probe-isolated.jsonl",
+      "tools": 25,
+      "slashCommands": 42,
+      "agents": 5,
+      "toolSearchRequired": false,
+      "sequence": []
+    }
+  ]
+}

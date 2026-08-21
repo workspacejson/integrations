@@ -389,3 +389,97 @@ for routing-commitment framing.
 This is a **hypothesis for future work**. It is not a result of this
 experiment, and it is not a finding of any external study. Nothing above tests
 it.
+
+---
+
+# Recruitment-path inspection (2026-08-21) — revises how the null must be read
+
+Added after the addendum above. This does not change what was measured, but it
+changes materially what the measurement can be attributed to. It was found by
+inspecting the host's MCP recruitment path rather than by re-reading the runs.
+
+## The adapter was schema-deferred behind Tool Search
+
+`ToolSearch` is present in the tool list of every M2B run. The adapter's tool
+appears in that list **by name only**: under Tool Search, a deferred tool's name
+is known but its parameter schema is not loaded, and it cannot be invoked until
+a `ToolSearch` call fetches the schema.
+
+Directed probes against the same host, config, and model settle it. Asked
+outright to call the tool, the model's call sequence was:
+
+```
+default config  (n=4):  ToolSearch  ->  workspace_review_evidence
+alwaysLoad:true (n=3):              ->  workspace_review_evidence
+```
+
+`alwaysLoad: true` on the server entry removes the deferral completely; without
+it, the retrieval step is mandatory, 4 out of 4.
+
+**Across all 21 instrumented M2B runs there were zero `ToolSearch` invocations.**
+The adapter's schema was therefore never loaded in any run, and the tool was not
+invocable in any run without a retrieval step the model never took.
+
+## What this does to the earlier reading
+
+The receipt above says the adapter was "exposed, connected, available, called
+zero times," and that zero invocation "is a finding about what the host chose."
+That is too strong and is corrected here.
+
+Exposed and connected are accurate. **Available is not** — not in the sense that
+matters. The tool was *listed*, not *loaded*. What M2B measured was recruitment
+through a **two-step deferred path**: notice a name, pay a `ToolSearch` call to
+get a schema, then invoke. It did not measure whether an agent will use a
+directly invocable evidence tool, because no M2B run ever had one.
+
+There is still a real recruitment failure in the data — the model never paid the
+retrieval step, though the name was visible. But it sits at the `ToolSearch`
+step, not at the invocation step, and its cost was higher than the earlier
+account represented.
+
+So the null now has **three** mutually confounded contributors, not two:
+
+1. **No headroom** — baseline reached the consequence unaided, 3/3 (measured).
+2. **Deferral** — the tool was never schema-loaded, so invocation was
+   structurally unavailable without an unpaid extra step (measured).
+3. **Description** — the self-limiting copy (unmeasured, see addendum).
+
+The disposition of record stays FAIL-PIVOT: what was built and run produced no
+delta. But the null must not be read as evidence about the value of the
+evidence. **M2B's treatment arm did not deliver a directly invocable tool**, and
+its scenario had no headroom to begin with. Any successor must fix both before
+the question is even asked.
+
+This also sharpens the routing analysis. The mechanism was not a capability
+weighed and declined; it was a capability whose schema was absent from context.
+That is nearer to abstention-under-surface-structure than the addendum allowed,
+though still not the textbook case: the agent invoked other tools heavily, and
+no alternate *invocation* surface was ever tested.
+
+## Profile isolation
+
+`--settings` with an emptied `enabledPlugins` had **no effect**: tools 30, slash
+commands 329, agents 29, identical to the default profile. Plugin and skill
+loading is not governed by that key.
+
+`CLAUDE_CONFIG_DIR` pointed at a fresh directory **does** isolate: tools 30 to
+25, slash commands 329 to 42, agents 29 to 5, with the MCP server still
+connected. It requires provisioning credentials separately — the probe returned
+`Not logged in`.
+
+Deferral is *not* caused by profile bloat. It reproduced identically under the
+default and the emptied-plugins profile, and the tool list was 30 in both. It is
+the default treatment of MCP tools in this host version.
+
+## Server instructions do not state comparative applicability
+
+`SERVER_INSTRUCTIONS` says what the evidence *is* and, at length, what it is
+*not* — not a dependency, not causality, not a recommendation, never safety.
+Those constraints are correct and stay.
+
+What it never says is **when this beats reading the repository directly**: that
+these are historical relationships which may not be visible from current source,
+imports, or references. An agent deciding between this and `Grep` is given no
+comparative reason to prefer it, and considerable reason to expect little. That
+is the same instrument confound recorded in the addendum, now located precisely:
+it is an omission of applicability, not an error of semantics.

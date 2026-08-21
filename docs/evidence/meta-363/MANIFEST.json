@@ -27,12 +27,17 @@
     "occurrences": 11,
     "consequence": "packages/spec/src/index.test.ts:324 asserts top-level property keys match between the two schema mirrors"
   },
-  "fileCount": 50,
+  "fileCount": 60,
   "files": [
     {
       "path": "RECEIPT.md",
-      "sha256": "9607aff9eecd4bd6d2914bf05c9a29a8b5099bfb9220cef5e4e07adbeb9a4698",
-      "bytes": 19250
+      "sha256": "25136b56239de5b7320c8cf59241e6c5a1a276695b8cf25e29399262efd4742b",
+      "bytes": 23918
+    },
+    {
+      "path": "SUCCESSOR-FREEZE.md",
+      "sha256": "c830f6893693cd2a9511f7313ffa97aa348f199516f0b28b84cee4e99c1e999e",
+      "bytes": 7069
     },
     {
       "path": "degraded-controls.txt",
@@ -43,6 +48,51 @@
       "path": "lifecycle-verification.txt",
       "sha256": "dc6cc6c89066f21b3e42f83e33f5bceaf828b87b99f376542a9b4c10cfa7545e",
       "bytes": 684
+    },
+    {
+      "path": "probes/probe-alwaysload-2.jsonl",
+      "sha256": "92f883a4bfa3bc7a9f3f79e27f367915b673862010f9ec2b902d4de73f9c7d3f",
+      "bytes": 34989
+    },
+    {
+      "path": "probes/probe-alwaysload-3.jsonl",
+      "sha256": "bc4f800a65a3895a8caa196950892b690014e17bb8386314e6f0cec23fffb23f",
+      "bytes": 34997
+    },
+    {
+      "path": "probes/probe-alwaysload.jsonl",
+      "sha256": "667ce24b9d7ffcb2a1a5e158a0127ec17734cb499e59e8f909496e5d61380131",
+      "bytes": 35007
+    },
+    {
+      "path": "probes/probe-clean.jsonl",
+      "sha256": "f1643947069fe6f726c52701365a3d0b12bb5f450552b1b6cbfaaf37d26d1301",
+      "bytes": 37616
+    },
+    {
+      "path": "probes/probe-default-2.jsonl",
+      "sha256": "0e7622c6601f7a69f437a307b1aeb28613b45c19a3cc93cb0553e079128be658",
+      "bytes": 37577
+    },
+    {
+      "path": "probes/probe-default-3.jsonl",
+      "sha256": "cb129737c478108f4b922b0761786fb6f77034bfab8514ddcf8e8c6eaf12f670",
+      "bytes": 37575
+    },
+    {
+      "path": "probes/probe-default.jsonl",
+      "sha256": "a63a55d8564898a643dbafb421395ad136aaaf87a16dfe3d0a39a7f88823dd52",
+      "bytes": 37592
+    },
+    {
+      "path": "probes/probe-isolated.jsonl",
+      "sha256": "7e5464e219733444720d9b551b385a45c7c0abc948d593f87cdba701ce2129d7",
+      "bytes": 3942
+    },
+    {
+      "path": "probes/probe-summary.json",
+      "sha256": "e236291df0c62ddd7b6446e766677415407186443104f9f6a70d3261b5b6ef7e",
+      "bytes": 2423
     },
     {
       "path": "protocol/analyze.py",
@@ -286,5 +336,9 @@
     "perturbed / absent / malformed worktrees -> <REPO_PERTURBED>, <REPO_ABSENT>, <REPO_MALFORMED>",
     "local integrations checkout -> <INTEGRATIONS>",
     "user home directory -> <HOME>"
-  ]
+  ],
+  "probes": {
+    "purpose": "directed recruitment-path probes, post-hoc",
+    "finding": "default MCP config defers the tool behind ToolSearch (4/4); alwaysLoad:true removes deferral (3/3); CLAUDE_CONFIG_DIR isolates the profile, --settings does not"
+  }
 }
