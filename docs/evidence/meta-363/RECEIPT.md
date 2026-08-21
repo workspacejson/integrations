@@ -110,10 +110,21 @@ recorded. This is a finding about what the host chose, not a harness failure.
 
 Reasoning traces were captured for 18 of the 24 adapter-configured runs. Across
 all 18, neither `workspace_review_evidence` nor `mcp` appears anywhere in the
-model's thinking — the tool was not weighed and rejected, it was never raised.
-That is the non-consideration shape, not deliberate rejection. It does not by
-itself say why: an available capability that is redundant with a cheaper
-familiar route may never reach deliberation for exactly that reason.
+recorded thinking.
+
+State that as what it is: **no observed evidence, in the captured traces, that
+the tool entered deliberation.** Traces are observations, not a guaranteed
+exhaustive readout of the model's reasoning, so trace silence does not establish
+that the tool was never internally considered. What is established behaviorally
+is that it was exposed, connected, available, called zero times, and never
+mentioned in anything recorded.
+
+The distinction that survives is between *no observed weighing* and *observed
+rejection*: nothing in these runs shows the tool being considered and turned
+down. Why is not established here. An available capability redundant with a
+cheaper familiar route might never surface for exactly that reason, and this
+data cannot separate that from the surface, or the tool's own description,
+failing to recruit it.
 
 ### Finding 2 — there was no baseline gap to close
 
@@ -245,3 +256,136 @@ paths were replaced with `<REPO>`, `<WORKDIR>`, `<INTEGRATIONS>`, and `<HOME>`;
 the redaction patterns are recorded in `MANIFEST.json`. No credentials appear in
 these artifacts — the host was invoked through the local `claude` CLI and the
 adapter reads only a local file.
+
+---
+
+# Post-hoc addendum (2026-08-21)
+
+Added after META-363 closed. This does not revise any result above. It records
+one unresolved confound in the instrument and sets terms for a successor
+experiment, so that neither gets rediscovered later as a surprise.
+
+## Unresolved instrument confound: the tool's own description
+
+The adapter describes itself to the host as returning *"observations, never
+findings, verdicts, severities, or recommendations."*
+
+That wording is semantically correct for workspace.json and the descriptive
+boundary it protects is not negotiable. But as host-facing integration copy,
+read by an agent that is at that moment trying to produce findings, it may
+communicate something narrower and less useful than intended: *this will not
+help you produce the thing you are working on*. If so, the description is
+plausibly under-recruiting the tool.
+
+This is **an unresolved confound in the instrument, not an explanation of the
+null.** It was not manipulated, so nothing here shows it mattered. It is
+recorded because it is a flaw in what was built, not a finding about the host,
+and because it is confounded with the surface itself in every run above.
+
+Three candidate explanations for zero invocation are mutually confounded in
+this data, all predicting the same observations:
+
+1. **No headroom** — the capability was outcome-redundant on this scenario
+   (measured: baseline 3/3).
+2. **Surface** — an optional MCP tool under-recruited against general native
+   primitives.
+3. **Description** — the self-limiting copy above.
+
+Separating them requires manipulation, not reinterpretation of these runs.
+
+A description can be made comparatively legible without becoming prescriptive.
+Something in the shape of: *historical repository observations for
+relationships that may not be visible from current source, imports, or
+references; use them as investigation candidates and verify consequential
+claims with repository tools.* Same descriptive semantics, clearer reason to
+select it. That is a candidate independent variable, **not a presumed fix** —
+nothing tested here says a description change would work.
+
+## Successor design: screening gate, not a factorial
+
+An earlier sketch proposed a headroom x surface 2x2. That was wrong. Headroom
+cannot be manipulated while holding the repository task constant — the two
+levels would come from different scenarios, confounding scenario identity with
+the factor.
+
+Headroom is a **fixture admission gate**, not a factor:
+
+```
+candidate fixtures
+      |
+      v
+baseline-headroom screening  --- baseline finds the consequence --> REJECT
+      |
+      | baseline misses the consequence
+      v
+   ACCEPT, then manipulate delivery WITHIN the accepted fixture
+```
+
+Screening is empirical. A fixture is admitted only when baseline is measured to
+miss the consequence, never when it is assumed to.
+
+That empirical requirement is load-bearing, not a formality. A mechanical
+pre-screen was run over the 50 co-change pairs in this repository's artifact,
+scoring each on whether either file references the other by path or basename,
+and whether they share a directory or package. M2B's own fixture scores 2 of 4,
+which is consistent with its failure. Thirteen pairs score 0.
+
+But the screen is too weak to admit anything on its own. It models discovery by
+filename reference, and the actual discovery channel in M2B was **lexical**: the
+reviewer grepped identifiers out of the diff and followed them. Two of the
+strongest zero-scoring pairs turn out to be well bridged that way —
+`packages/rules/package.json` reaches `packages/spec/package.json` through the
+`@workspacejson/spec` dependency name, and `.github/workflows/ci.yml` reaches
+the root `package.json` through eight npm script names. Neither bridge involves
+a filename.
+
+Modelling that channel properly would mean predicting what a reviewer will grep
+for, which depends on the diff that does not exist yet. So **headroom is not
+mechanically screenable.** A pre-screen can only narrow candidates; admission
+has to come from measuring baseline. Assuming headroom from structure is the
+mistake M2B already made.
+
+Within an accepted fixture, the arms:
+
+| Arm | Question |
+| -- | -- |
+| Baseline | Is there genuine headroom? (also the admission measurement) |
+| Current MCP | Does ordinary availability recruit the tool? |
+| Applicability-scaffolded MCP | Does clearer comparative applicability change selection? |
+| Forced native delivery | Does the evidence help once routing is removed? |
+| Perturbed evidence | Is any observed effect actually evidence-attributable? |
+
+Invocation rate and review outcome are separate dependent variables. M2B
+conflated them, and that is why its null is uninterpretable.
+
+## Preserved hypothesis: specialized-tool recruitment
+
+M2B's zero invocation is adjacent to routing-commitment analysis but is not an
+instance of its named failure classes. Mode confusion is structurally
+impossible here (single-function tool). Schema-induced abstention does not
+apply on either clause of its definition: the agent invoked other tools
+heavily, and no alternate *invocation* surface was tested — M2A's injected
+evidence is forced delivery that bypasses routing, not a competing surface.
+
+Nor is it wrong-tool selection. The adapter and the native primitives did not
+hold the same capability: the adapter offered historical relationship
+evidence, the primitives offered source inspection. They were merely
+**outcome-substitutable in this fixture** — both routes reached the partner
+file and the invariant.
+
+What that suggests is a question sitting *before* the invoke/tool/mode
+decisions rather than inside them:
+
+> What causes a specialized informational tool to enter an agent's
+> consideration set at all, when familiar general-purpose primitives can
+> reconstruct the same outcome?
+
+Call it **specialized-tool recruitment**, or consideration-set formation. A
+controlled router chooses among exposed capabilities; a coding agent can reach
+one outcome through a specialized tool, or Read, or Grep, or Bash, or
+combinations of them. That difference is a plausible generalization boundary
+for routing-commitment framing.
+
+This is a **hypothesis for future work**. It is not a result of this
+experiment, and it is not a finding of any external study. Nothing above tests
+it.
