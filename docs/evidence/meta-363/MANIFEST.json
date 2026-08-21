@@ -31,8 +31,8 @@
   "files": [
     {
       "path": "RECEIPT.md",
-      "sha256": "6831ad2757aa79a7d39ab7881bb1a8c8350593166acd3147c1bb8776dc95465b",
-      "bytes": 11740
+      "sha256": "3280faa295444fe420063d50cd09a1ccdc42fc65165c0f2d7ca4fc954b33347b",
+      "bytes": 12382
     },
     {
       "path": "degraded-controls.txt",

@@ -93,18 +93,27 @@ adapter was configured, whether it was pointed at, and the prompt variant.
 
 ### Finding 1 — the host never called the adapter (0/30)
 
-In all 21 runs where the adapter was configured, the session `init` event
-recorded `mcp_servers: [{"name":"workspacejson-review-evidence","status":"connected"}]`
+The adapter was configured in 24 of the 30 runs. In the 18 of those carrying
+structured traces, the session `init` event recorded
+`mcp_servers: [{"name":"workspacejson-review-evidence","status":"connected"}]`
 and exposed `mcp__workspacejson-review-evidence__workspace_review_evidence` in
-the tool list. The host called it zero times.
+the tool list; the other 6 were the text-only first pass, where connection was
+not separately recorded. The host called the tool zero times in all 24.
 
 This includes 9 runs (`treatment-invoked`, `n-treatment-invoked`,
 `n-perturbation-invoked`) whose prompt stated: *"Repository-history context for
 the changed files is available from the connected MCP tools; consult it if you
 find it useful."* The host still did not call it, using Read/Grep/Bash instead.
 
-The adapter was connected and reachable in every case. This is a finding about
-what the host chose, not a harness failure.
+The adapter was connected and reachable in every case where connection was
+recorded. This is a finding about what the host chose, not a harness failure.
+
+Reasoning traces were captured for 18 of the 24 adapter-configured runs. Across
+all 18, neither `workspace_review_evidence` nor `mcp` appears anywhere in the
+model's thinking — the tool was not weighed and rejected, it was never raised.
+That is the non-consideration shape, not deliberate rejection. It does not by
+itself say why: an available capability that is redundant with a cheaper
+familiar route may never reach deliberation for exactly that reason.
 
 ### Finding 2 — there was no baseline gap to close
 
