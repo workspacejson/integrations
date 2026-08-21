@@ -102,11 +102,15 @@ returns both partners immediately.
 Both files are regenerated together by `scripts/create_example.clj`, which is why
 they co-change.
 
-**Rejected on consequence location.** The two snapshots describe different
-example workspaces (`user`/`user-remote` versus `database`/`datomic-ions`); the
-registered partner is a sibling *symptom* of a serializer change, not the cause.
-Inspecting it does not lead to the fix. Shared basename `ws.edn` is an additional
-bridge.
+**Rejected because inspecting the partner does not expose an objectively
+verifiable consequence relevant to the review task.** The two snapshots describe
+different example workspaces (`user`/`user-remote` versus
+`database`/`datomic-ions`), so opening one establishes no checkable fact about a
+change to the other. Shared basename `ws.edn` is an additional bridge.
+
+*Wording corrected 2026-08-21: the original rejection was phrased causally
+("symptom, not the cause"). The criterion is not causal and the phrasing is
+replaced above. The rejection itself is unchanged.*
 
 ## C4 — the measured candidate
 
@@ -273,3 +277,97 @@ python3 protocol/analyze.py <workdir>/a0
 `MANIFEST.json` carries a SHA-256 for every file. Session-local absolute paths in
 the transcripts were replaced with `<REPO>`, `<WORKDIR>`, `<CLONES>` and `<HOME>`.
 No credentials appear in these artifacts.
+
+---
+
+# Corrective verification — C4 under profile isolation (2026-08-21)
+
+Added after the result above. **Nothing above is rewritten.** The original arm and
+its recorded deviation stand as historical evidence; this section appends the
+corrected measurement.
+
+## Why
+
+The original C4 measurement carried one recorded deviation from
+`../meta-363/SUCCESSOR-FREEZE.md`: it ran on the default profile, because a fresh
+`CLAUDE_CONFIG_DIR` returned `Not logged in` and credentials were not provisioned.
+This corrects exactly that, and only that.
+
+## What changed, and what did not
+
+Changed: `CLAUDE_CONFIG_DIR` points at a provisioned fresh directory, and the
+credential is injected from the authorized Doppler-scoped store as
+`ANTHROPIC_API_KEY`, never printed and never written to any artifact.
+
+Unchanged and verified byte-identical or field-identical: repository and revision
+(`68dab986…`, clean detached worktree), the diff (`protocol/changed.diff`,
+`sha256 36bd996827d6106e…`), the prompt bytes (`protocol/prompt.txt`,
+`sha256 99a80b8c47a2ff84…`), model, allowed tools, permission mode, host version,
+`--strict-mcp-config`, absence of any adapter/hook/injection, the frozen
+consequence, the registered partner, and the preregistered discovery criteria and
+admission rule.
+
+Isolation is confirmed per run from the session `init` event rather than assumed:
+
+| | default profile | isolated profile |
+| -- | -- | -- |
+| slash commands | 329 | **44** |
+| agents | 29 | **5** |
+| `mcp_servers` | — | `[]` |
+| model | `claude-sonnet-5` | `claude-sonnet-5` |
+
+All five corrected runs report `slash_commands: 44`, `agents: 5`,
+`mcp_servers: []`, `model: claude-sonnet-5`.
+
+One harness note, recorded because it caused a first attempt to fail closed with
+five empty transcripts: `doppler run` resolves project and config from the working
+directory, so it must be invoked from the Doppler-scoped directory with the
+inner shell changing into the pinned worktree. The five empty runs produced no
+output, were discarded before analysis, and are not counted.
+
+The repository's own tracked `CLAUDE.md` at the pinned revision still loads in
+both arms. It is repository-owned, identical across every run, and contains no
+instruction toward repository history, co-change, or the registered partner.
+
+## Result — 5 fresh runs, isolated profile
+
+Same preregistered criteria, same analyzer (`protocol/analyze.py`).
+
+| Run | tool calls | files read | partner named | partner opened (`Read`) | partner path cited | consequence stated | consequence grounded | strict discovery |
+| -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| 01 | 5 | 2 | yes | yes | yes | yes | no | **yes** |
+| 02 | 5 | 2 | yes | yes | yes | yes | yes | **yes** |
+| 03 | 9 | 3 | yes | yes | yes | yes | yes | **yes** |
+| 04 | 5 | 2 | yes | yes | yes | yes | no | **yes** |
+| 05 | 3 | 1 | yes | no (repo-wide search) | no | yes | no | no |
+
+**Strict discovery 4/5. Registered consequence stated 5/5. Partner opened 4/5.**
+
+Admission required 0/5. **C4 remains REJECTED**, and the corrected arm rejects it
+slightly harder than the original (4/5 strict versus 3/5).
+
+Run 05, the single strict miss, still reached the registered consequence — by a
+repo-wide search for `quiet` rather than through the partner:
+
+> `:is-quiet` is never set by any argument parser, config reader, or CLI flag
+> definition — it's a dead key that will always be `nil` … the intended "quiet"
+> suppression feature does nothing.
+
+That is the §10 "different path" case: recorded separately, and it does not
+convert a miss into an admission because admission requires *all* runs to miss the
+consequence, which none did.
+
+## What the correction settles
+
+The profile deviation is eliminated as an explanation for the original rejection.
+The direction predicted when the deviation was recorded — that the default
+profile's exploration-favouring global instructions could only make discovery
+*more* likely, never less — is consistent with the outcome: removing them did not
+reduce discovery.
+
+**META-373's disposition is unchanged: `BOUNDED_SEARCH_EXHAUSTED`.** No fixture is
+admitted, the successor delivery experiment stays gated, and A0–A5 were not run
+beyond this baseline verification.
+
+Corrected-arm artifacts: `a0-isolated/run-0{1..5}.jsonl`,
+`a0-isolated-analysis.json`, `protocol/run-a0-iso.sh`, `protocol/prompt.txt`.

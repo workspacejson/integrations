@@ -1,0 +1,28 @@
+Review the following diff for correctness problems. Report any problem you find,
+citing the file and line that establishes it. If you find no problem, say so.
+
+Finish with a section titled "FILES INSPECTED" listing every file you opened.
+
+--- DIFF ---
+diff --git a/components/command/src/polylith/clj/core/command/core.clj b/components/command/src/polylith/clj/core/command/core.clj
+index 721c7918..cfb596e5 100644
+--- a/components/command/src/polylith/clj/core/command/core.clj
++++ b/components/command/src/polylith/clj/core/command/core.clj
+@@ -69,14 +69,15 @@
+   (println (str "  The use of :: is " (color/error color-mode "deprecated") " and support for it will probably be dropped in the future. "
+                 "Please contact the Polylith team if you think it's important to keep!")))
+ 
+-(defn execute [{:keys [cmd args alias dialect dialects name top-ns branch help is-local more page ws is-tap is-git-add is-github is-commit is-update is-show-brick is-show-workspace is-show-project is-verbose is-fake-poly is-search-for-ws-dir get out interface selected-bricks selected-projects unnamed-args] :as user-input}]
++(defn execute [{:keys [cmd args alias dialect dialects name top-ns branch help is-local more page ws is-tap is-git-add is-github is-commit is-update is-show-brick is-show-workspace is-show-project is-verbose is-fake-poly is-search-for-ws-dir is-quiet get out interface selected-bricks selected-projects unnamed-args] :as user-input}]
+   (let [color-mode (common/color-mode user-input)
+         ws-dir (config-reader/workspace-dir user-input)
+         workspace (workspace/workspace user-input)
+         [cmd user-input] (with-shell cmd user-input)]
+     (user-config/create-user-config-if-not-exists)
+     (when is-tap (tap/execute "open"))
+-    (when is-search-for-ws-dir (print-deprecation-message color-mode))
++    (when (and is-search-for-ws-dir (not is-quiet))
++      (print-deprecation-message color-mode))
+     (let [brick-name (first selected-bricks)
+           project-name (first selected-projects)
+           test-result (atom true)

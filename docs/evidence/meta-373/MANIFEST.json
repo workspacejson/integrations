@@ -7,11 +7,20 @@
     "<REPO>",
     "<WORKDIR>",
     "<CLONES>",
-    "<HOME>"
+    "<HOME>",
+    "<INTEGRATIONS>"
   ],
   "candidatesScreened": 5,
   "candidatesMeasured": 1,
   "fixturesAdmitted": 0,
+  "arms": {
+    "a0": "default profile (original, deviation recorded)",
+    "a0-isolated": "CLAUDE_CONFIG_DIR isolated (corrective verification)"
+  },
+  "c4BaselineDiscovery": {
+    "a0": "3/5 strict, 5/5 consequence stated",
+    "a0-isolated": "4/5 strict, 5/5 consequence stated"
+  },
   "files": [
     {
       "path": "CANDIDATE-C4.md",
@@ -20,8 +29,8 @@
     },
     {
       "path": "RECEIPT.md",
-      "bytes": 14538,
-      "sha256": "aee6648b93b5b9fc7acb2aea0794c75dd5f6f883911783e98ee6a0ba6a8029b2"
+      "bytes": 19145,
+      "sha256": "a5e8c08f7cf88ba23687156873895495dd0b74f6f952bf20e7bae5fba64a2b34"
     },
     {
       "path": "a0/run-01.jsonl",
@@ -54,6 +63,36 @@
       "sha256": "c70b3c8a42be3708c24001fbe3eb22309aea64b5245f4c1f8793310a7c449494"
     },
     {
+      "path": "a0-isolated/run-01.jsonl",
+      "bytes": 46191,
+      "sha256": "252110716b2b24c224c5b38beb5f1cabe2080b96b56846aa9c07d3f07b1f9d6e"
+    },
+    {
+      "path": "a0-isolated/run-02.jsonl",
+      "bytes": 50369,
+      "sha256": "cef5b1d87993a9f7a9774aa289050071f0479b0bddfb409c5dc39a694bc0b288"
+    },
+    {
+      "path": "a0-isolated/run-03.jsonl",
+      "bytes": 59911,
+      "sha256": "f5e61112dfb1b6d01cb625a2da731b88f42c1c5e0fb7668bbadff02c16f83034"
+    },
+    {
+      "path": "a0-isolated/run-04.jsonl",
+      "bytes": 47819,
+      "sha256": "d135f39e94128ed4b672d6839b98ca2b59dfd6c6fc774858598627c702b6507c"
+    },
+    {
+      "path": "a0-isolated/run-05.jsonl",
+      "bytes": 26196,
+      "sha256": "e1639e0a6cc2c52a6076e984e34d5895568f343a90c0948ef6e1d77849975c3c"
+    },
+    {
+      "path": "a0-isolated-analysis.json",
+      "bytes": 8910,
+      "sha256": "090e25d5338819ab81be9e0d78f3a4f4a091be140b064b5fa3bf83f87c7f6f39"
+    },
+    {
       "path": "protocol/analyze.py",
       "bytes": 2815,
       "sha256": "dd0f8280ea65722a61636395fd17cf32d44d8b11f1fbf9d3e55de2ab32b50c30"
@@ -62,6 +101,16 @@
       "path": "protocol/changed.diff",
       "bytes": 1816,
       "sha256": "36bd996827d6106e68e1414db0ff1f6939a7f98138d45466d40fb06ca586259a"
+    },
+    {
+      "path": "protocol/prompt.txt",
+      "bytes": 2068,
+      "sha256": "99a80b8c47a2ff84fa96b3bcd4095073e0d72d1c304c8d98f8de905905be7f3b"
+    },
+    {
+      "path": "protocol/run-a0-iso.sh",
+      "bytes": 1360,
+      "sha256": "164a8ce3c723b09af5d129e9fee60c10a20b1f300d66e01dcd6f8c78094dc261"
     },
     {
       "path": "protocol/run-a0.sh",
