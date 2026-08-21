@@ -1,0 +1,72 @@
+{
+  "issue": "META-373",
+  "disposition": "BOUNDED_SEARCH_EXHAUSTED",
+  "host": "Claude Code 2.1.238",
+  "model": "claude-sonnet-5",
+  "redactions": [
+    "<REPO>",
+    "<WORKDIR>",
+    "<CLONES>",
+    "<HOME>"
+  ],
+  "candidatesScreened": 5,
+  "candidatesMeasured": 1,
+  "fixturesAdmitted": 0,
+  "files": [
+    {
+      "path": "CANDIDATE-C4.md",
+      "bytes": 4360,
+      "sha256": "f8478623dc0172e8bf9b04bcf9cc2efc98af3d2ca77ef28e287f1cb0521f57f1"
+    },
+    {
+      "path": "RECEIPT.md",
+      "bytes": 14538,
+      "sha256": "aee6648b93b5b9fc7acb2aea0794c75dd5f6f883911783e98ee6a0ba6a8029b2"
+    },
+    {
+      "path": "a0/run-01.jsonl",
+      "bytes": 66524,
+      "sha256": "430ec37a3f71cf36b1337b114b0be3220983693820468620c3a71a518928e6f7"
+    },
+    {
+      "path": "a0/run-02.jsonl",
+      "bytes": 75044,
+      "sha256": "13584d692902f9f87ee8053f4a08959536effb168818cb8213a8a2e92884e1a9"
+    },
+    {
+      "path": "a0/run-03.jsonl",
+      "bytes": 54938,
+      "sha256": "f6a15678a4495af172a739b0c9bcf3080e2aec85c9b2820a2571c4dd8716c274"
+    },
+    {
+      "path": "a0/run-04.jsonl",
+      "bytes": 69057,
+      "sha256": "1803a9d1e51a04c9f46c033fadb90b4edd468dcc8ac058d10e9ed575ca367c12"
+    },
+    {
+      "path": "a0/run-05.jsonl",
+      "bytes": 68108,
+      "sha256": "9fd39c62734889f9cd91e6ddfd3192ff901d76455cf59765b217feb21c22c251"
+    },
+    {
+      "path": "a0-analysis.json",
+      "bytes": 9423,
+      "sha256": "c70b3c8a42be3708c24001fbe3eb22309aea64b5245f4c1f8793310a7c449494"
+    },
+    {
+      "path": "protocol/analyze.py",
+      "bytes": 2815,
+      "sha256": "dd0f8280ea65722a61636395fd17cf32d44d8b11f1fbf9d3e55de2ab32b50c30"
+    },
+    {
+      "path": "protocol/changed.diff",
+      "bytes": 1816,
+      "sha256": "36bd996827d6106e68e1414db0ff1f6939a7f98138d45466d40fb06ca586259a"
+    },
+    {
+      "path": "protocol/run-a0.sh",
+      "bytes": 1138,
+      "sha256": "ebe6fb091b7bcd60fc32f6fba746e1a8650071cc7df8db66eb4f1a9491a29b19"
+    }
+  ]
+}
