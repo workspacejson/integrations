@@ -24,7 +24,8 @@
   ],
   "bin": {
     "codex-mcp": "scripts/install.mjs",
-    "workspacejson-codex-mcp": "scripts/install.mjs"
+    "workspacejson-codex-mcp": "scripts/install.mjs",
+    "workspacejson-review-evidence": "dist/claude-code/server.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
