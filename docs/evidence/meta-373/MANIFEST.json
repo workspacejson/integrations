@@ -29,8 +29,8 @@
     },
     {
       "path": "RECEIPT.md",
-      "bytes": 19145,
-      "sha256": "a5e8c08f7cf88ba23687156873895495dd0b74f6f952bf20e7bae5fba64a2b34"
+      "bytes": 20172,
+      "sha256": "efc70c0a322e3d39801dc5ff2c26a74039483b84a68dc836363ca3dac9f67819"
     },
     {
       "path": "a0/run-01.jsonl",
@@ -116,6 +116,26 @@
       "path": "protocol/run-a0.sh",
       "bytes": 1138,
       "sha256": "ebe6fb091b7bcd60fc32f6fba746e1a8650071cc7df8db66eb4f1a9491a29b19"
+    },
+    {
+      "path": "gate/RECEIPT.md",
+      "bytes": 14578,
+      "sha256": "c1a290d262fe5670ca885bad30fec035d5ce903baf216f37f6a2ade776604eba"
+    },
+    {
+      "path": "gate/TRANSACTION-UNIT-RULE.md",
+      "bytes": 1874,
+      "sha256": "f4671df6bce1fea21a65dcf26b3135a129cec9017c910ab563454099fc6e2dec"
+    },
+    {
+      "path": "gate/MANIFEST.json",
+      "bytes": 2269,
+      "sha256": "abcb742fa713e5ec11328d43483cdf02d6cdff988ef787a830d074297a727738"
     }
-  ]
+  ],
+  "forwardFeasibilityGate": {
+    "result": "NO_POST_BASIS_HELDOUT",
+    "receipt": "gate/RECEIPT.md",
+    "successorIssue": "META-374"
+  }
 }

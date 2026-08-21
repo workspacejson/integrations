@@ -1,0 +1,70 @@
+{
+  "issue": "META-373",
+  "gate": "forward-looking change-planning feasibility gate",
+  "feasibilityResult": "NO_POST_BASIS_HELDOUT",
+  "successorIssue": "META-374",
+  "executedRuns": 0,
+  "artifactsGenerated": 0,
+  "repositoriesChecked": {
+    "JamieMason/syncpack@958d30689ac24b60623258630242330bd6d0264b": {
+      "postBasisFirstParentTransitions": 0,
+      "pinIsRemoteHead": true,
+      "remote": "origin/main"
+    },
+    "polyfy/polylith@68dab9868274c8044817983c2424fbdbd616a456": {
+      "postBasisFirstParentTransitions": 0,
+      "pinIsRemoteHead": true,
+      "remote": "origin/master"
+    },
+    "formatjs/formatjs@27c29bf9a40a50dac232a159b8790dbd14732c57": {
+      "postBasisFirstParentTransitions": 44,
+      "pinIsRemoteHead": false,
+      "remote": "origin/main",
+      "remoteHead": "7187a7a661c895d19f029c2809a3ef681db3606a"
+    }
+  },
+  "borderlineCandidate": {
+    "repository": "formatjs/formatjs",
+    "pr": 7066,
+    "mergeCommit": "80d721f6ae408b9c2df27785ad5b13f568a12b2f",
+    "mergedAt": "2026-08-21T09:22:43-04:00",
+    "targetFile": "MODULE.bazel",
+    "registeredPartner": "MODULE.bazel.lock",
+    "support": 12,
+    "occurrences": 103,
+    "observedT1FileSetSize": 9,
+    "disposition": "REJECTED \u2014 trivial exposure (basename derivation, definitional generation, directory adjacency)"
+  },
+  "retrospectiveOption": {
+    "status": "PROPOSED \u2014 not approved, not executed",
+    "repository": "JamieMason/syncpack",
+    "t0Prime": "233a0b37265ff278bc96ece91f8c2bbfcaeeb280",
+    "transitionsToPin": 100,
+    "firstParentDepthAtT0Prime": 819,
+    "nonReleaseNonDependencyInWindow": 89,
+    "producer": "@workspacejson/cli@0.5.2 via META-310 meta310-mine.mjs, unchanged"
+  },
+  "frozenRule": {
+    "path": "TRANSACTION-UNIT-RULE.md",
+    "frozenBefore": "any post-basis history fetched or inspected"
+  },
+  "redactions": [
+    "<REPO>",
+    "<WORKDIR>",
+    "<CLONES>",
+    "<HOME>",
+    "<INTEGRATIONS>"
+  ],
+  "files": [
+    {
+      "path": "RECEIPT.md",
+      "bytes": 14578,
+      "sha256": "c1a290d262fe5670ca885bad30fec035d5ce903baf216f37f6a2ade776604eba"
+    },
+    {
+      "path": "TRANSACTION-UNIT-RULE.md",
+      "bytes": 1874,
+      "sha256": "f4671df6bce1fea21a65dcf26b3135a129cec9017c910ab563454099fc6e2dec"
+    }
+  ]
+}

@@ -371,3 +371,24 @@ beyond this baseline verification.
 
 Corrected-arm artifacts: `a0-isolated/run-0{1..5}.jsonl`,
 `a0-isolated-analysis.json`, `protocol/run-a0-iso.sh`, `protocol/prompt.txt`.
+
+---
+
+# Forward-looking feasibility gate — `NO_POST_BASIS_HELDOUT` (2026-08-21)
+
+Added after the results above. **Nothing above is rewritten.**
+
+META-373's disposition suggested the search for headroom may need to leave code
+review. A forward-looking feasibility gate then asked whether an authentic
+held-out change transaction exists *after* any pinned artifact's
+`basisRevision`, which is what a change-planning headroom test would require.
+
+**Result: `NO_POST_BASIS_HELDOUT`.** syncpack and polylith — the two
+repositories carrying source-level evidence — have **zero** post-basis
+transitions; each pin *is* its remote head. FormatJS has 44, and the single
+borderline candidate (PR #7066, `MODULE.bazel` -> `MODULE.bazel.lock`) is
+rejected on trivial exposure. No Claude run was executed by the gate.
+
+Full receipt, the transaction-unit rule frozen before any post-basis history was
+fetched, and the proposed-but-unexecuted retrospective option: `gate/`.
+Successor research issue: **META-374**, which blocks META-364.
