@@ -1,0 +1,21 @@
+diff --git a/packages/spec/src/schema.ts b/packages/spec/src/schema.ts
+index 0236e23..03cac66 100644
+--- a/packages/spec/src/schema.ts
++++ b/packages/spec/src/schema.ts
+@@ -225,5 +225,16 @@ export const workspaceJsonSchema = {
+       },
+       additionalProperties: true,
+     },
++    provenance: {
++      type: 'object',
++      description:
++        'Optional record of how this document was produced: the tool, the revision it was generated from, and the scan mode.',
++      properties: {
++        producer: { type: 'string' },
++        basisRevision: { type: 'string' },
++        scanMode: { type: 'string', enum: ['full', 'incremental'] },
++      },
++      additionalProperties: false,
++    },
+   },
+ } as const;

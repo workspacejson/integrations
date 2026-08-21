@@ -1,0 +1,22 @@
+## Correctness problem: the change creates validator drift, not a real schema change
+
+The diff edits only `packages/spec/src/schema.ts`, adding `provenance` to the `workspaceJsonSchema` TS object literal. It does not touch `packages/spec/schema/v1.json`. These are two different schema copies in this repo, consumed by two different runtime validators, and after this change they disagree about whether the same document is valid:
+
+- **`packages/spec/src/index.ts:37-42`**: the package's own `validate()`/`validateV4()` compile against `../schema/v1.json` read from disk at runtime, explicitly *not* `schema.ts` — the code comment says so directly: "The runtime validator consumes the schema artifact that is published with the package, rather than the authoring-time TypeScript mirror." `packages/spec/schema/v1.json:7` still has `"additionalProperties": false` at the root, and grepping the file confirms `provenance` does not appear anywhere in it (checked via `grep -n '"provenance"' packages/spec/schema/v1.json` → no match). So a document with an optional `provenance` block is still **rejected** by `@workspacejson/spec`'s `validate()`.
+
+- **`packages/rules/src/validator/workspace-json-validator.ts:3,12`**: `WorkspaceJsonValidator` imports `workspaceJsonSchema` — the exact object exported from `schema.ts` (re-exported at `packages/spec/src/index.ts:5`) — and compiles it directly with AJV. Because this diff adds `provenance` to that object, the same document is now **accepted** by `@workspacejson/rules`'s validator.
+
+So after this change, a `workspace.json` document carrying a `provenance` block validates successfully through `@workspacejson/rules` but fails through `@workspacejson/spec`, the package the repo calls "the single normative schema" (`.github/instructions/schema-contract.instructions.md:5`: "`packages/spec/schema/v1.json` is the single normative schema. Never create or maintain another editable schema copy."). That same instructions file also requires a governing issue, an Accepted ADR, positive/negative fixtures, and running `check:schema`/`check:examples` before changing schema bytes — none of which appear in this diff, and no ADR for a `provenance` field exists (`docs/adr/` has only 001–006, none about provenance).
+
+Net effect: the change doesn't actually make `provenance` a validated, supported field anywhere consumers can rely on — it just makes the two in-repo validators disagree, silently, on documents containing it.
+
+## FILES INSPECTED
+- `packages/spec/src/schema.ts` (the diff's target; confirmed `provenance` added under top-level `properties`, sibling to `health`, with root `additionalProperties: false` and `required: ['manual','generated','agents','health']` at lines 6-7)
+- `scripts/verify-schema-provenance.mjs` (confirms `packages/spec/schema/v1.json` is treated as the canonical, hash-pinned schema artifact)
+- `packages/spec/package.json` (confirms `exports["./schema"]` points at `./schema/v1.json`, and `build` is just `tsc`, i.e. no generation step turns `schema.ts` into `v1.json`)
+- `.github/instructions/schema-contract.instructions.md` (states `schema/v1.json` is "the single normative schema… Never create or maintain another editable schema copy," and lists required process steps for schema changes)
+- `packages/spec/src/index.ts` (lines 37-42: runtime `validate()`/`validateV4()` load and compile `../schema/v1.json`, explicitly not the TS mirror)
+- `packages/spec/schema/v1.json` (grepped: root `additionalProperties: false` at line 7; no `provenance` key present anywhere)
+- `packages/rules/src/validator/workspace-json-validator.ts` (lines 3, 12: `WorkspaceJsonValidator` compiles AJV directly from the `workspaceJsonSchema` export, i.e. from `schema.ts`)
+- `packages/spec/src/types.ts` (grepped: no `provenance`/`Provenance` type added, confirming the TS types weren't updated alongside the schema mirror)
+- `docs/adr/` directory listing (no ADR 007+ or any ADR governing a `provenance` field)

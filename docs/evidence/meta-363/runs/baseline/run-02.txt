@@ -1,0 +1,25 @@
+Confirmed — `types.ts` also has no `provenance` field, but that's secondary to the main issue below.
+
+## Correctness problem found
+
+**The diff only edits the authoring-time TypeScript mirror (`packages/spec/src/schema.ts`), not the published/runtime schema (`packages/spec/schema/v1.json`), which are required to stay in sync.**
+
+- `packages/spec/src/index.ts:37-42` — explicitly states and implements that "the runtime validator consumes the schema artifact that is published with the package [`schema/v1.json`], rather than the authoring-time TypeScript mirror," and compiles the AJV validator from `schema/v1.json`, not from `workspaceJsonSchema` in `schema.ts`.
+- `packages/spec/schema/v1.json:1-18` — confirmed via Grep/Read that this file has no `provenance` key and still has `additionalProperties: false` at the top level (line 7).
+- `packages/spec/src/index.test.ts:324-329` — an existing test, `'workspaceJsonSchema top-level property keys match schema/v1.json'`, asserts the two files' top-level property key sets are identical. Adding `provenance` only to `schema.ts` breaks this invariant and will fail this test.
+
+**Consequences:**
+1. The new `provenance` field is effectively non-functional: the actual runtime validator (built from `schema/v1.json`) has no knowledge of `provenance` and, because the top level is `additionalProperties: false`, any document that includes a `provenance` block will be **rejected as invalid** — the opposite of the intended effect of adding optional provenance support.
+2. The existing split-brain guard test at `index.test.ts:324` will fail on this branch, since it's designed specifically to catch this class of mistake.
+
+Secondarily, `packages/spec/src/types.ts` (`WorkspaceJsonV4` interface, line 245) was not updated with a `provenance` field either, so TypeScript consumers get no typed access to the new data even where it would otherwise validate.
+
+**Fix required:** apply the same `provenance` property addition to `packages/spec/schema/v1.json`, and add the corresponding field to `WorkspaceJsonV4` in `types.ts`.
+
+## FILES INSPECTED
+- `packages/spec/src/schema.ts` (diff target, full file)
+- `packages/spec/schema/v1.json` (top of file, and grepped for `provenance`)
+- `packages/spec/src/index.ts` (lines 1–60)
+- `packages/spec/src/index.test.ts` (lines 310–350, confirming the split-brain guard tests)
+- `packages/spec/src/types.ts` (grepped for `WorkspaceJsonV4`/`provenance`)
+- Directory listing of `packages/spec/` (via `find`) to locate related schema/type/test files

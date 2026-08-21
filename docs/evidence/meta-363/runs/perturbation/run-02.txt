@@ -1,0 +1,29 @@
+No automated gate compares the two files, so nothing in CI catches this drift. That confirms the bug ships silently.
+
+## Correctness problem
+
+The diff adds a `provenance` property only to `packages/spec/src/schema.ts` (`workspaceJsonSchema`), but does **not** update `packages/spec/schema/v1.json`, the canonical schema artifact.
+
+These two files are independently-maintained, parallel copies of the same schema, and the codebase relies on them staying in sync in different ways:
+
+- `packages/spec/src/index.ts:5,39-42` — the runtime `validate()`/`validateV4()` functions used by `@workspacejson/spec` compile the validator from `schema/v1.json` (read via `readFileSync(...'../schema/v1.json'...)`), explicitly *not* from `schema.ts` — the comment at `index.ts:37-38` calls `workspaceJsonSchema` "the authoring-time TypeScript mirror" as distinct from "the schema artifact that is published with the package."
+- `packages/rules/src/validator/workspace-json-validator.ts:3,12` — `WorkspaceJsonValidator` instead imports `workspaceJsonSchema` from `@workspacejson/spec` (i.e., `schema.ts`'s object, re-exported via `index.ts:5`) and compiles its own ajv validator from *that*.
+
+Because the root schema still has `additionalProperties: false` in both files (`schema.ts:7`, `schema/v1.json:7`), and `v1.json`'s `properties` still lacks `provenance`, the two validators now disagree on the same input: a `workspace.json` document carrying a `provenance` field will be **accepted** by `@workspacejson/rules`'s `WorkspaceJsonValidator` (schema.ts-based) but **rejected** by `@workspacejson/spec`'s own `validate()` (v1.json-based, since `provenance` becomes a disallowed additional property there).
+
+This also violates the repo's own explicit rule in `.github/instructions/schema-contract.instructions.md:5,16`: *"`packages/spec/schema/v1.json` is the single normative schema. Never create or maintain another editable schema copy... Keep the schema, TypeScript types, validation behavior, exports, examples, and documentation aligned."* No script in the repo cross-checks `schema.ts` against `schema/v1.json` (confirmed no match for `schema.ts`/`workspaceJsonSchema` in `scripts/check-architecture.mjs`), so this divergence isn't caught by CI — it ships silently and the two exported schema surfaces (`@workspacejson/spec`'s `workspaceJsonSchema` named export vs. its `./schema` package export) disagree.
+
+**Fix**: add the identical `provenance` block to `packages/spec/schema/v1.json` (and normally also its documentation/example fixtures per the same instructions file, item 4).
+
+## FILES INSPECTED
+
+- `packages/spec/src/schema.ts` (the diff itself)
+- `packages/spec/schema/v1.json`
+- `packages/spec/src/index.ts`
+- `packages/spec/src/types.ts`
+- `packages/spec/src/validator.ts`
+- `packages/spec/src/stored-key-inspection.ts`
+- `packages/spec/package.json`
+- `packages/rules/src/validator/workspace-json-validator.ts`
+- `scripts/verify-schema-provenance.mjs`
+- `.github/instructions/schema-contract.instructions.md`

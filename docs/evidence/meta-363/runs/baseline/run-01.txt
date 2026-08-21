@@ -1,0 +1,21 @@
+## Correctness problem found
+
+The diff adds a new `provenance` property to `packages/spec/src/schema.ts` (new lines 228–238) but does not update `packages/spec/schema/v1.json`, which is a second, independently-maintained copy of the same schema.
+
+This matters because these two files are not interchangeable copies — the package deliberately treats them differently:
+
+- `packages/spec/src/index.ts:37-41` compiles the runtime validator (`validate`, `validateV4`, `validateLegacy`) from `schema/v1.json`, not from `schema.ts`, with an explicit comment: *"The runtime validator consumes the schema artifact that is published with the package, rather than the authoring-time TypeScript mirror."*
+- `packages/spec/schema/v1.json:7` and `:18` still has `additionalProperties: false` at the top level with no `provenance` key in `properties` (verified by reading the full file — the diff never touches it). Any document that now sets a top-level `provenance` field (as the new schema.ts ostensibly permits) will still be **rejected** by the actual runtime validator, because `schema/v1.json` was never updated.
+- The repo already has a regression test guarding against exactly this drift: `packages/spec/src/index.test.ts:324-329`, `'workspaceJsonSchema top-level property keys match schema/v1.json'`, which does `expect(tsProps).toEqual(jsonProps)` comparing `Object.keys(workspaceJsonSchema.properties)` against `Object.keys(json.properties)`. After this diff, `tsProps` gains `'provenance'` while `jsonProps` does not, so this test will fail.
+
+So the change is incomplete/incorrect in a verifiable way: it edits only the TypeScript "authoring-time mirror" and leaves the canonical, exported, runtime-consumed schema (`./schema` export in `packages/spec/package.json:48` → `schema/v1.json`) unchanged. The net effect is that the feature the diff appears to add (an optional `provenance` block) does not actually work for any consumer using the published package's validator, and it breaks an existing split-brain test.
+
+## FILES INSPECTED
+
+- packages/spec/src/schema.ts (diff target; confirmed the new `provenance` block at lines 228–238)
+- packages/spec/schema/v1.json (confirmed no `provenance` property and unchanged `additionalProperties: false` at top level)
+- packages/spec/src/index.ts (confirmed the runtime validator is compiled from `schema/v1.json`, not `schema.ts`)
+- packages/spec/src/validator.ts (confirmed `compileSchemaValidator` just wraps ajv; doesn't change which schema is used)
+- packages/spec/package.json (confirmed `exports["./schema"]` points to `./schema/v1.json`, and `build` is plain `tsc` — nothing regenerates `schema/v1.json` from `schema.ts`)
+- packages/spec/src/index.test.ts (confirmed existing "no split-brain" test at lines 324-329 that compares top-level property keys between `workspaceJsonSchema` and `schema/v1.json`, which this diff breaks)
+- scripts/verify-schema-provenance.mjs (confirmed `schema/v1.json` is treated as the sole canonical, hash-pinned schema artifact for downstream consumers)

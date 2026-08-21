@@ -31,7 +31,8 @@
       "assets",
       "extension",
       "scripts/extract-session*.mjs",
-      "docs/migration/parity-receipt.json"
+      "docs/migration/parity-receipt.json",
+      "docs/evidence"
     ]
   }
 }

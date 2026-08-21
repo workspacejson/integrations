@@ -1,0 +1,23 @@
+Confirmed: `health` closes and the top-level `properties` object ends without a `provenance` key. This verifies the split-brain.
+
+## Correctness problem found
+
+The diff adds a `provenance` property to `workspaceJsonSchema.properties` in `packages/spec/src/schema.ts` (lines 228–238 in the new file) but does **not** update the mirrored canonical schema file `packages/spec/schema/v1.json`. This package deliberately maintains two hand-authored copies of the schema (the TypeScript literal in `schema.ts` and the packaged/canonical JSON in `schema/v1.json`, which is what `exports["./schema"]` and downstream consumers actually resolve to per `scripts/verify-schema-provenance.mjs`).
+
+There is an explicit regression test guarding exactly this kind of drift:
+
+- `packages/spec/src/index.test.ts:324-329` — `'workspaceJsonSchema top-level property keys match schema/v1.json'` reads `schema/v1.json`, takes `Object.keys(json.properties).sort()`, takes `Object.keys(workspaceJsonSchema.properties).sort()`, and asserts they're `toEqual`.
+
+After this diff, `workspaceJsonSchema.properties` in `schema.ts` has 5 keys (`version, manual, generated, agents, health, provenance`) while `schema/v1.json`'s `properties` (confirmed via `packages/spec/schema/v1.json:18-190`, no `"provenance"` key present — verified with a grep that returned no matches) still has only the original 5. This test will fail, and consumers who resolve the schema via the package's published `./schema` export (the canonical file) will silently be unable to validate/produce documents carrying `provenance`, even though the in-repo TypeScript schema now advertises it — the two mirrors disagree on what's a valid document, which is precisely the "split-brain" condition this package's test suite exists to prevent (per the comment at `index.test.ts:314-315`: "These tests prevent split-brain between schema.ts and schema/v1.json.").
+
+The fix is straightforward: add the same `provenance` block to `packages/spec/schema/v1.json`, keeping both mirrors byte-equivalent in content.
+
+## FILES INSPECTED
+
+- `packages/spec/src/schema.ts` (the diff target, plus full file for context)
+- `packages/spec/src/types.ts`
+- `packages/spec/src/validator.ts`
+- `packages/spec/src/stored-key-inspection.ts`
+- `packages/spec/src/index.test.ts`
+- `packages/spec/schema/v1.json`
+- `scripts/verify-schema-provenance.mjs`

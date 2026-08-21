@@ -1,0 +1,1 @@
+{"mcpServers":{"workspacejson-review-evidence":{"command":"node","args":["<INTEGRATIONS>/dist/claude-code/server.js"],"env":{"WORKSPACE_JSON_ROOT":"<REPO_PERTURBED>"}}}}

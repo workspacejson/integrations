@@ -1,0 +1,26 @@
+Confirmed: this gate only checks the JSON file (`schema/v1.json`) for prescriptive fields and stable read paths — it never compares it against `src/schema.ts`, so nothing in CI catches the two files drifting apart.
+
+This gives me enough to finalize the finding.
+
+## Correctness problem
+
+The diff adds `provenance` only to `packages/spec/src/schema.ts` (the diff's sole file). It does not touch `packages/spec/schema/v1.json`, the canonical schema file.
+
+- `packages/spec/src/index.ts:37-41` explicitly states and implements that the runtime `validate()`/`validateV4()`/`validateLegacy()` functions compile the schema read from `../schema/v1.json` — "the schema artifact that is published with the package, rather than the authoring-time TypeScript mirror" (i.e. `schema.ts` is *not* used for validation).
+- `packages/spec/schema/v1.json:7` still has `"additionalProperties": false` at the document root, and its `properties` block (lines 18-193) has no `provenance` entry.
+- `packages/spec/src/schema.ts:7` also keeps `additionalProperties: false` at the root, but now (lines 228-239 of the new version) declares `provenance` as an allowed property.
+
+Net effect: a document that includes a top-level `provenance` field will be treated as schema-conformant by anyone who reads/consults `workspaceJsonSchema` (exported from `schema.ts` via `packages/spec/src/index.ts:5`) directly, but will be **rejected** by `validate()` at runtime, because the actual compiled validator (from `schema/v1.json`) still forbids any property not in its `properties` list. This is a real behavioral inconsistency introduced by the change, not just documentation drift — the two schema copies that this package ships (and that `scripts/verify-schema-provenance.mjs` / `scripts/check-architecture.mjs` treat as required to be single-sourced from `schema/v1.json`) now disagree on whether `provenance` is valid, and nothing in the diff or in the existing CI gates (`check-architecture.mjs:143-153` only checks for *duplicate* schema files, not for `schema.ts`/`schema/v1.json` parity) catches this.
+
+The fix would be to also add the equivalent `provenance` block to `packages/spec/schema/v1.json`.
+
+## FILES INSPECTED
+
+- `packages/spec/src/schema.ts` (diff target, full file)
+- `packages/spec/src/types.ts`
+- `packages/spec/src/validator.ts`
+- `packages/spec/src/index.ts`
+- `packages/spec/schema/v1.json`
+- `packages/spec/package.json`
+- `scripts/verify-schema-provenance.mjs`
+- `scripts/check-architecture.mjs`

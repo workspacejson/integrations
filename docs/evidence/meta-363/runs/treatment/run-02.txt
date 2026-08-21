@@ -1,0 +1,14 @@
+Confirmed: `packages/spec/schema/v1.json`'s top-level `properties` block ends at `health` (line 168–188+) with no `provenance` key, and `schema/v1.json`'s `properties` keys are `version, manual, generated, agents, health` only — no `provenance`.
+
+This is exactly what `packages/spec/src/index.test.ts:324-329` guards against ("no split-brain between schema.ts and schema/v1.json"): it asserts `Object.keys(workspaceJsonSchema.properties)` (TS source, now includes `provenance`) equals `Object.keys(json.properties)` from `schema/v1.json` (unchanged, no `provenance`). The diff only edits `packages/spec/src/schema.ts` and does not touch `packages/spec/schema/v1.json`, so this test will fail, and the two schema artifacts genuinely diverge: the runtime validator (`workspaceJsonSchema`, exported and used by `validate`/`validateV4` per `packages/spec/src/index.ts:5`) accepts `provenance`, while the canonical published schema at `./schema` (`packages/spec/package.json:48` → `schema/v1.json`, the file `scripts/verify-schema-provenance.mjs` explicitly certifies as "canonical") rejects it (top-level `additionalProperties: false`, confirmed by `schema/v1.json:6` `required` list and the absence of `provenance` in its `properties`).
+
+That is a real correctness bug: a document containing `provenance` validates against the package's runtime validator but is rejected by the canonical schema any external consumer fetches via `@workspacejson/spec/schema`, and it breaks the existing structural-invariant test.
+
+## FILES INSPECTED
+
+- `packages/spec/src/schema.ts` — the diff's target; added `provenance` as a top-level sibling property inside `properties` (confirmed by reading the full file, lines 197–229).
+- `scripts/verify-schema-provenance.mjs` — establishes that `packages/spec/schema/v1.json` is the canonical, externally-consumed schema and that keeping it in sync with the TS source is a load-bearing contract.
+- `packages/spec/package.json` — confirms `exports["./schema"]` points at `./schema/v1.json` (line 48), i.e. that file, not `schema.ts`, is what downstream consumers fetch.
+- `packages/spec/src/index.ts` — confirms `workspaceJsonSchema` from `schema.ts` is exported and used as the runtime validator (line 5).
+- `packages/spec/src/index.test.ts` — found the split-brain guard test (`lines 316-334`), specifically `lines 324-329`, which will fail against this diff.
+- `packages/spec/schema/v1.json` — confirmed its top-level `properties` keys (`version, manual, generated, agents, health`, via `required` at line 6 and structure through line 188+) do not include `provenance`, and it was not modified by this diff.

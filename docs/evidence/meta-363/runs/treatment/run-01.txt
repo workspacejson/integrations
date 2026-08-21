@@ -1,0 +1,26 @@
+Confirmed exactly as suspected. This is a clean, verifiable finding.
+
+## Correctness problem
+
+The diff adds a `provenance` property to `workspaceJsonSchema.properties` in `packages/spec/src/schema.ts` (lines 228–239) but does not update the corresponding entry in `packages/spec/schema/v1.json`, which I read in full — its `properties` block (lines 19–229) ends after `health` with no `provenance` key, and its root object still has `"additionalProperties": false` (`packages/spec/schema/v1.json:7`).
+
+This matters because these two files are not interchangeable copies — `packages/spec/src/index.ts:35-39` states explicitly: *"The runtime validator consumes the schema artifact that is published with the package, rather than the authoring-time TypeScript mirror,"* and loads `../schema/v1.json` to build `compileSchemaValidator`. So `schema.ts`'s `workspaceJsonSchema` is only a TypeScript-side mirror; the actual runtime validation (`validate`/`validateV4`/etc. exported from `index.ts`) runs against `schema/v1.json`.
+
+Consequently:
+- Any consumer that adds a `provenance` block to a `workspace.json` document — believing it's supported because `schema.ts` now allows it — will have that document **rejected** by the real runtime validator, because `schema/v1.json` still declares `additionalProperties: false` at the root with no `provenance` key.
+- The repo already has a test suite guarding exactly this failure mode: `packages/spec/src/index.test.ts:314` ("These tests prevent split-brain between schema.ts and schema/v1.json") and specifically `packages/spec/src/index.test.ts:324-329`, `'workspaceJsonSchema top-level property keys match schema/v1.json'`, which asserts `Object.keys(workspaceJsonSchema.properties)` equals the keys in `schema/v1.json`'s `properties`. Since `schema.ts` now has an extra `provenance` key absent from `schema/v1.json`, this test would fail with the diff as given.
+
+This is a functional correctness bug, not just a style nit: the change is incomplete in a way that makes the schema internally inconsistent and, per the project's own regression test, provably so.
+
+(Secondary observation, not separately reported as a finding: the new `provenance.basisRevision` duplicates the concept already governed by `generated.basisRevision`, which per `packages/spec/src/schema.ts:74` and `.agents/RECEIPT.md:118` is meant to be declared once and is the "authoritative freshness and provenance pin." The new field has no pattern constraint and no cross-field consistency rule with `generated.basisRevision`, unlike the precedent set for `version`/`generated.specVersion` at `packages/spec/src/schema.ts:8-17`. Worth a look, but the split-brain issue above is the concrete, test-verifiable defect.)
+
+## FILES INSPECTED
+- `packages/spec/src/schema.ts` (full file, and the diff)
+- `packages/spec/src/index.ts`
+- `packages/spec/schema/v1.json` (head and tail)
+- `packages/spec/src/index.test.ts`
+- `packages/spec/package.json`
+- `scripts/verify-schema-provenance.mjs`
+- `.agents/RECEIPT.md`
+- `docs/adr/003-field-lifecycle-and-admission.md`
+- `conformance/path-identity/receipt-baseline.json`

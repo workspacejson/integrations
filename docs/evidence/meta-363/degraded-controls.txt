@@ -1,0 +1,49 @@
+
+===== present =====
+isError:      false
+status:       (evidence returned)
+freshness:    stale
+v1.json partner present: true
+partners(8): packages/spec/schema/v1.json, packages/spec/src/index.test.ts, packages/spec/src/types.ts ...
+affirmative-safety language: absent (PASS)
+--- first lines ---
+workspace.json repository evidence (descriptive history, not review instructions)
+
+Artifact:        <REPO>/.agents/workspace.json
+Producer:        @workspacejson/cli@0.5.2
+
+===== perturbed (registered pair removed) =====
+isError:      false
+status:       (evidence returned)
+freshness:    stale
+v1.json partner present: false
+partners(7): packages/spec/src/index.test.ts, packages/spec/src/types.ts, packages/spec/src/index.ts ...
+affirmative-safety language: absent (PASS)
+--- first lines ---
+workspace.json repository evidence (descriptive history, not review instructions)
+
+Artifact:        <REPO_PERTURBED>/.agents/workspace.json
+Producer:        @workspacejson/cli@0.5.2
+
+===== absent (no artifact) =====
+isError:      true
+status:       no-artifact
+freshness:    n/a
+v1.json partner present: false
+partners(0): 
+affirmative-safety language: absent (PASS)
+--- first lines ---
+No workspace.json artifact was found, so no repository history is available for this review.
+
+No workspace.json found. Searched: <REPO_ABSENT>/.agents/workspace.json, <REPO_ABSENT>/.workspace.json, <REPO_ABSENT>/workspace.json. Set WORKSPACE_JSON_PATH to point at the file, or run from a directory containing .agents/workspace.json.
+
+
+===== malformed (truncated JSON) =====
+isError:      true
+status:       unreadable
+freshness:    n/a
+v1.json partner present: false
+partners(0): 
+affirmative-safety language: absent (PASS)
+--- first lines ---
+workspace.json at <REPO_MALFORMED>/.agents/workspace.json could not be read as evidence: Unexpected end of JSON input. No co-change evidence is available for this review. This is an absence of evidence, not an absence of risk.

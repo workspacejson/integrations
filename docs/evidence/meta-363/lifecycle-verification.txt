@@ -1,0 +1,15 @@
+=== Claude Code MCP lifecycle verification (host 2.1.238) ===
+--- before install ---
+(absent)
+--- claude mcp add --scope local ---
+Added stdio MCP server workspacejson-review-evidence with command: node <INTEGRATIONS>/dist/claude-code/server.js to local config
+File modified: <HOME>/.claude.json [project: <REPO>]
+--- claude mcp list ---
+workspacejson-review-evidence: node <INTEGRATIONS>/dist/claude-code/server.js - ✔ Connected
+--- claude mcp remove --scope local ---
+Removed MCP server workspacejson-review-evidence from local config
+File modified: <HOME>/.claude.json [project: <REPO>]
+--- after removal ---
+(absent - host back to baseline)
+--- host usable after removal ---
+OK
